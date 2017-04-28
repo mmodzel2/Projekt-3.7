@@ -93,7 +93,8 @@ template <class type>
             Current_Solutions();
             ~Current_Solutions();
             unsigned int solve(Electronics<type>* e);
-            Node<type>** get_connections(Node<type>* snode, Node<type>** connections_list, unsigned long n);
+            Node<type>** get_connections(Node<type>* snode, Node<type>* connections_list[], unsigned long &n);
+            Node<type>** get_loops(Node<type>* connections_list[], unsigned long n, Node<type>* loops[], unsigned long k);
     };
 
 template <class type>
@@ -237,6 +238,10 @@ template <class type>
 template <class type>
     unsigned int Current_Solutions<type>::solve(Electronics<type>* e){
         //start from finding first node
+        bool flag;
+        unsigned long n = 0, nodes_count = 0;
+        Node<type>* connection_list[];
+
         Electronics<type>* en = e;
         Node<type>** connections_list;
         while(1){
@@ -246,30 +251,158 @@ template <class type>
              if (en->get_type() == 1) break; //node detected
         }
 
-        if (en == nullptr){
-            Electronics<type>* en = e;
-            while(1){
-                en = en->get_connect_out(); //go right
-                if (en == nullptr) break; //end of connections
-                if (en->get_type() == 1) break; //node detected
+       if (en == e) { //Nodes were not created
+
+       } else {
+            if (en == nullptr){
+                en = e;
+                while(1){
+                    en = en->get_connect_out(); //go right
+                    if (en == nullptr) break; //end of connections
+                    if (en->get_type() == 1) break; //node detected
+                }
             }
+
+            if (en == nullptr) return 1; //current without connections
+
+            connections_list = get_connections(dynamic_cast<Node<type>*>(en), nullptr, n);
+
+            Node<type>* nodes[] = new Node<type>* [n];
+
+            for (unsigned long i = 0; i < n; i++) nodes[i] = nullptr;
+
+            for (unsigned long i = 0; i < n; i++){
+                flag = 0;
+                for (unsigned long j = 0; j < nodes_count; j++)
+                    if (nodes[j] == connection_list[i*2]){
+                        flag = 1;
+                        break;
+                    }
+                if (flag == 0)
+                    nodes[nodes_count++] = connection_list[i*2];
+            }
+
+            /* Prepare matrix for currents to get currents formulas */
+
+            Matrix<double>* I = new Matrix<double>(nodes_count,n); //create current matrix to get node currents
+
+            /* Example build of matrix
+                -1   1  v1
+                 1  -1  v2
+                e1  e2
+                        where e - connection, v - node
+                              -1 - start of connection, 1 - end of connection, 0 - node is not a part of connection
+            */
+
+            for (unsigned long i = 0; i < n; i++){ //set direction of current in matrix
+                //check if node is a part of connection and set direction of current
+                for (unsigned long j = 0; j < nodes_count; j++){
+                    if (connection_list[i*2] == nodes[j]) I->set(j,i,-1); //start of connection - from this direction current comes
+                    if (connection_list[(i*2)+1] == nodes[j]) I->set(j,i,1); //end of connection
+                }
+            }
+
+            /* Prepare matrix for voltages to get voltages formulas */
+            /* We need to find loops in network */
+          //get_loops();
         }
-
-        if (en == e) { //Nodes were not created
-
-        } else {
-
-        }
-
-        if (en == nullptr) return 1; //current without connections
-
-        connections_list = get_connections(dynamic_cast<Node<type>*>(en), nullptr, 0);
 
         return 0;
     }
 
 template <class type>
-    Node<type>** Current_Solutions<type>::get_connections(Node<type>* snode, Node<type>** connections_list, unsigned long n){
+    Node<type>** Current_Solutions<type>::get_connections(Node<type>* snode, Node<type>* connections_list[], unsigned long &n){
+        bool flag;
+        Electronics<type> *e, *in, *out;
+        Electronics<type> *pe = snode; //previous node
+        Node<type>* temp_list[];
+        assert (snode->get_node() != 0); //Node has to have one connection
+        if (connections_list != nullptr)
+            for (unsigned long i = 0; i < n; i++)
+                if (connections_list[i*2] == snode) return connections_list; //node was processed
+
+        for (unsigned long i = 0; i < snode->get_node(); i++){
+            e = snode->get(i);
+            while(1){
+                in = e->get_connection_in();
+                out = e->get_connection_out();
+                if (in == nullptr || out == nullptr) break;
+
+                if (in == pe) {
+                    if (out->get_type() == 1){
+                        if (connections_list == nullptr) connections_list = new Node<type>* [2];
+                        else {
+                            flag = 0;
+                            for(unsigned long j = 0; j < n*2; j=+2)
+                                if (connections_list[j] == out && connections_list[j+1] == out){
+                                    flag = 1;
+                                    break;
+                                }
+                            if (flag) break; //connection exists
+
+                            temp_list = new Node<type>* [(n+1)*2];
+                            for (unsigned long j = 0; j < n*2; j=+2){
+                                temp_list[j] = connections_list[j];
+                                temp_list[j+1] = connections_list[j+1];
+                            }
+                            connections_list = temp_list;
+                        }
+
+                        connections_list[n*2] = snode; //add connection
+                        connections_list[(n*2)+1] = out;
+                        n++;
+
+                        connections_list = get_connections(out, connections_list, n); //find connections in found node
+                        break;
+                    } else {
+                        pe = e; //move forward
+                        e = out;
+                        continue;
+                    }
+                } else {
+                    if (in->get_type() == 1){
+                        if (connections_list == nullptr) connections_list = new Node<type>* [2];
+                        else {
+                            flag = 0;
+                            for(unsigned long j = 0; j < n*2; j=+2)
+                                if (connections_list[j] == in && connections_list[j+1] == out){
+                                    flag = 1;
+                                    break;
+                                }
+                            if (flag) break; //connection exists
+
+                            temp_list = new Node<type>* [(n+1)*2];
+                            for (unsigned long j = 0; j < n*2; j=+2){
+                                temp_list[j] = connections_list[j];
+                                temp_list[j+1] = connections_list[j+1];
+                            }
+                            connections_list = temp_list;
+                        }
+
+                        connections_list[n*2] = snode; //add connection
+                        connections_list[(n*2)+1] = in;
+                        n++;
+
+                        connections_list = get_connections(in, connections_list, n); //find connections in found node
+                        break;
+                    } else {
+                        pe = e; //move forward
+                        e = in;
+                        continue;
+                    }
+                }
+            }
+        }
+        return connections_list;
+    }
+
+template <class type>
+    Node<type>** Current_Solutions<type>::get_loops(Node<type>* connections_list[], unsigned long n, Node<type>* loops[], unsigned long k){
+        if (loops == nullptr){
+            loops = new Node<type>* [n*n];
+
+        }
+
 
     }
 
