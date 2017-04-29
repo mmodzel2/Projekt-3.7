@@ -14,7 +14,7 @@ int main()
     cout << n3->get_node() << endl;
     Node<double>* n4 = new Node<double>;
     cout << n4->get_node() << endl;
-    Resistor<double>* r1 = new Resistor<double>(3);
+    Current_source<double>* r1 = new Current_source<double>(2);
     Resistor<double>* r2 = new Resistor<double>(1);
     Resistor<double>* r3 = new Resistor<double>(1);
     Resistor<double>* r4 = new Resistor<double>(1);
@@ -26,7 +26,7 @@ int main()
     n3->add(r3);
     n4->add(r3);
     n4->add(r4);
-    n1->add(r1);
+    n1->add(r4);
 
     r1->connect_in(n1);
     r1->connect_out(n2);
@@ -38,7 +38,7 @@ int main()
     r3->connect_out(n4);
 
     r4->connect_in(n4);
-    //r4->connect_out(n1);
+    r4->connect_out(n1);
 
     Current_Solutions<double>* s= new Current_Solutions<double>;
      cout << s->solve(r1) << endl;

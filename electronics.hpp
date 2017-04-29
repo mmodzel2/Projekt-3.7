@@ -2,7 +2,7 @@
 * Name: electronics.hpp
 * Purpose: Solving problems with electronics
 * @author mmodzel2
-* @version 0.5 29-04-2017
+* @version 0.6 29-04-2017
 */
 
 #ifndef _ELECTR_HPP
@@ -514,6 +514,17 @@ template <class type>
             /* Prepare next part of matrix for voltages to get voltages formulas */
             /* We need to find loops in network */
             connection_loops = get_loops(connection_list,n,nullptr,0,0);
+            if (connection_loops == nullptr) cout << "Loop not found" << endl;
+
+            for (unsigned int i = 0; i < n; i++){
+                if (connection_loops[i*(n+1)] != nullptr){
+                    for (unsigned int j = 0; j < n+1; j++){
+                         if (connection_loops[i*(n+1)+j] == nullptr) break;
+                         cout << connection_loops[i*(n+1)+j]->get_node() << "->";
+                    }
+                    cout << endl;
+                }
+            }
 
             stringstream* solution;
             solution = equation(*I, *IB);
@@ -627,7 +638,7 @@ template <class type>
             /* Build of structure above
                 square n*(n+1) in which every loop starts from k*n - where k is number of loop in structure
                 every loop has n+1 elements - each element in loop is pointer to node in the loop */
-            for (unsigned int j = 1; j < n*n; j++)
+            for (unsigned int j = 1; j < n*(n+1); j++)
                 loops[j] = nullptr; //we do not have elements in loops - clear it
 
             //set first element in first loop - first node
@@ -646,24 +657,24 @@ template <class type>
 
         //find next node in connections_list
         for(unsigned int j = 0; j < n*2; j+=2){
-            if (connections_list[j] == loops[k*n+l]){
+            if (connections_list[j] == loops[k*(n+1)+l]){
                 if (flag == 0){ //add node to existing loop
                     flag = 1;
-                    loops[k*n+l+1] = connections_list[j+1];
+                    loops[k*(n+1)+l+1] = connections_list[j+1];
                 } else {
                     for (unsigned int i = 0; i < n; i++)
-                        if (loops[i*n] == nullptr){
+                        if (loops[i*(n+1)] == nullptr){
                             memflag[i] = 1; //set block
 
                             for (unsigned int m = 0; m <= l; m++)
-                                loops[(i*n)+m] = loops[(k*n)+m]; //copy previous nodes in loop
+                                loops[(i*(n+1))+m] = loops[(k*(n+1))+m]; //copy previous nodes in loop
 
-                            loops[i*n+l+1] = connections_list[j+1]; //add node to created loop
+                            loops[i*(n+1)+l+1] = connections_list[j+1]; //add node to created loop
                             break;
                         }
                 }
             }
-            if (connections_list[j+1] == loops[k*n+l]){
+           /* if (connections_list[j+1] == loops[k*n+l]){
                 if (flag == 0){ //add node to existing loop
                     flag = 1;
                     loops[k*n+l+1] = connections_list[j];
@@ -679,31 +690,31 @@ template <class type>
                             break;
                         }
                 }
-            }
+            }*/
         }
 
         //make recursion to existing loop and created new loops
         for(unsigned int j = 0; j < n; j++){
             if (memflag[j] == 1){
                 flag1 = 1;
-                if (loops[j*n] != loops[j*n+l+1]){ //loop is not closed
+                if (loops[j*(n+1)] != loops[j*(n+1)+l+1]){ //loop is not closed
 
                 //check if loop is cut
                 flag = 0;
                 for (unsigned int i = 1; i < l; i++)
-                    if (loops[k*n+i] == loops[k*n+l+1]){ //node is in loop - loop has to be skipped
-                        for (unsigned int p = 0; p < n; p++) loops[k*n+p] = nullptr;
+                    if (loops[j*(n+1)+i] == loops[j*(n+1)+l+1]){ //node is in loop - loop has to be skipped
+                        for (unsigned int p = 0; p < n+1; p++) loops[j*(n+1)+p] = nullptr;
                         flag = 1;
                         break;
                     }
                     if (flag == 0)  //loop is not cut
                          get_loops(connections_list, n, loops, j, l+1); //work on next or existing loop
 
-                }
+                } else cout << "Loop closed." << endl;
             }
         }
 
-        if (flag1 == 0) for (unsigned int p = 0; p < n; p++) loops[k*n+p] = nullptr; //loop not found
+        if (flag1 == 0) for (unsigned int p = 0; p < n+1; p++) loops[k*(n+1)+p] = nullptr; //loop not found
 
         delete[] memflag;
 
