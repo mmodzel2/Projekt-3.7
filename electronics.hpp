@@ -2,7 +2,7 @@
 * Name: electronics.hpp
 * Purpose: Solving problems with electronics
 * @author mmodzel2
-* @version 0.4 29-04-2017
+* @version 0.45 29-04-2017
 */
 
 #ifndef _ELECTR_HPP
@@ -12,6 +12,7 @@
 #include <sstream>
 #include <assert.h>
 #include <iostream>
+#include <stdlib.h>
 
 using namespace std;
 
@@ -206,18 +207,21 @@ template <class type>
 template <class type>
     void Node<type>::add(Electronics<type>* c){
         if (connection_count_ == 0){
-            connections_ = new Electronics<type>* [++connection_count_]; //create block
+            connections_ = new Electronics<type>* [10]; //create block
+            ++connection_count_;
             connections_[0] = c; //add element
         } else {
             Electronics<type>* (*temp_connections);
-            temp_connections = new Electronics<type>* [connection_count_+1]; //create new block for node connections
-            for (unsigned int i = 0; i < connection_count_; i++) //copy content
-                temp_connections[i] = connections_[i];
+            if (connection_count_%10 == 0){
+                temp_connections = new Electronics<type>* [connection_count_+10]; //create new block for node connections
+                for (unsigned int i = 0; i < connection_count_; i++) //copy content
+                    temp_connections[i] = connections_[i];
 
-            temp_connections[connection_count_++] = c; //add element
-            delete[] connections_; //delete old block
+                delete[] connections_; //delete old block
+                connections_ = temp_connections; //set new block pointer
 
-            connections_ = temp_connections; //set new block pointer
+            }
+            connections_[connection_count_++] = c; //add element
         }
     }
 
@@ -295,8 +299,8 @@ template <class type>
 template <class type>
     EVariable<type>* Current_source<type>::current(std::string current){
         EVariable<type>* v = new EVariable<type>;
-        v->con = 1;
-        v->v = j_;
+        v->con = j_;
+        v->v = "1";
         return v;
     }
 
@@ -331,7 +335,7 @@ template <class type>
         bool flag;
         unsigned int nodes_count = 0;
         Node<type>** connection_list;
-//        Node<type>** connection_loops;
+        Node<type>** connection_loops;
 
         unsigned int &n = *new unsigned int;
         n = 0;
@@ -367,9 +371,9 @@ template <class type>
                 cout << connection_list[i*2]->get_node() << " - " << connection_list[i*2+1]->get_node() << endl;
             }
             /* End */
-            Node<type>** nodes = new Node<type>* [n];
+            Node<type>** nodes = new Node<type>* [n] {nullptr};
 
-            for (unsigned int i = 0; i < n; i++) nodes[i] = nullptr;
+            //for (unsigned int i = 0; i < n; i++) nodes[i] = nullptr;
 
             for (unsigned int i = 0; i < n; i++){
                 flag = 0;
@@ -383,6 +387,8 @@ template <class type>
             }
 
             cout << "Nodes count: " << nodes_count << endl;
+
+            for (unsigned int i = 0; i < n; i++) cout << nodes[i]->get_node() << endl;
 
             /* Prepare matrix for currents to get currents formulas */
 
@@ -442,8 +448,10 @@ template <class type>
                     if (ie != nullptr) {
                         if ((static_cast<Node<type>*>(ie)) == connection_list[(i*2)+1]){
                             if (var1 != nullptr){ //found current source
+                                cout << "Current source detected." << endl;
                                 if (var1->v == "1"){ //current is not depended from another current - probably independent source
-                                    for (unsigned int m = 0; m < nodes_count; m++){
+                                    cout << "Independent current source detected." << endl;
+                                    /*for (unsigned int m = 0; m < nodes_count; m++){
                                         //move element to right of equation
                                         if (I->get(m,i) == -1){
                                                 I->set(m,i,0);
@@ -452,7 +460,11 @@ template <class type>
                                                 I->set(m,i,0);
                                                 IB->set(m,0,-var1->con);
                                         }
-                                    }
+                                    }*/
+                                    I->expand(I->get_rows()+1, I->get_columns()+1);
+                                    IB->expand(IB->get_rows()+1, 1);
+                                    I->set(I->get_rows()-1,i,1);
+                                    IB->set(IB->get_rows()-1,0,var1->con);
                                 } else if (var1->v[0] == 'I'){ //current depends from another current
                                     //we have to find connection in which current var1->v goes
                                     //to do
@@ -471,6 +483,38 @@ template <class type>
                 }
             }
 
+            /* Show matrix - for test purpose */
+            for (unsigned int i = 0; i < I->get_rows(); i++){
+                for (unsigned int j = 0; j < I->get_columns(); j++)
+                    cout << I->get(i,j) << " ";
+                cout << endl;
+            }
+
+            cout << "----------" << endl;
+
+            for (unsigned int i = 0; i < IB->get_rows(); i++){
+                for (unsigned int j = 0; j < IB->get_columns(); j++)
+                    cout << IB->get(i,j) << " ";
+                cout << endl;
+            }
+
+            /*I->set(0,0,0);
+            IB->set(0,0,2);
+            I->set(1,0,0);
+            IB->set(1,0,-2);
+
+            for (unsigned int i = 0; i < I->get_rows(); i++){
+                for (unsigned int j = 0; j < I->get_columns(); j++)
+                    cout << I->get(i,j) << " ";
+                cout << endl;
+            }*/
+
+
+
+            /* Prepare next part of matrix for voltages to get voltages formulas */
+            /* We need to find loops in network */
+            connection_loops = get_loops(connection_list,n,nullptr,0,0);
+
             stringstream* solution;
             solution = equation(*I, *IB);
             if (solution == nullptr) cout << "No solution..." << endl;
@@ -480,10 +524,6 @@ template <class type>
                 cout << solution[m].str() << endl;
             }
             }
-
-            /* Prepare next part of matrix for voltages to get voltages formulas */
-            /* We need to find loops in network */
-          //connection_loops = get_loops(connections_list,n,nullptr,0);
         }
 
         return 0;
@@ -506,108 +546,64 @@ template <class type>
         cout << "Working on: " << snode->get_node() << " - " << snode->get_connection_count() << endl;
 
         for (i = 0; i < snode->get_connection_count(); i++){
+            cout << "Element: " << i << endl;
             e = snode->get(i);
             pe = snode;
             while(1){
                 in = e->get_connect_in();
                 out = e->get_connect_out();
                 if (in == nullptr || out == nullptr) break;
-
+                cout << "Work: " << endl;
                 if (in == pe) {
                     cout << "IN is previous" << endl;
-                    if (out->get_type() == 1){
-                        ne = static_cast<Node<type>*>(out);
-                        cout << "Node detected: " << ne->get_node() << "; (size of connections: " << n << ")" << endl;
-                        if (connections_list == nullptr) connections_list = new Node<type>* [10] {nullptr};
-                        else {
-                            flag = 0;
-                            k = 0;
-                            while(k < n*2){
-                                if ((connections_list[k])->get_node() == ne->get_node()){
-                                    //if (connections_list[j+1] == snode){
-                                        cout << "Connection exists" << endl;
-                                        flag = 1;
-                                        break;
-
-                                    //}
-                                }
-                                cout << k << endl;
-                                cout << "T: " << connections_list[k]->get_node() << " - " << connections_list[k+1]->get_node() << endl;
-                                cin >> j;
-                                j = 0;
-                                k+=2;
-                            }
-                            if (flag) break; //connection exists
-
-                            /*temp_list = new Node<type>* [10];
-                            cout << "Hmm3.." << endl;
-                            for (j = 0; j < n*2; j=+2){
-                                temp_list[j] = connections_list[j];
-                                temp_list[j+1] = connections_list[j+1];
-                            }
-                            cout << "Hmm4.." << endl;
-                            delete[] connections_list;
-                            connections_list = temp_list;*/
-                        }
-
-                        connections_list[n*2] = snode; //add connection
-                        connections_list[(n*2)+1] = ne;
-                        cout << "Connection: " << snode->get_node() << " - " << ne->get_node() << endl;
-                        n++;
-
-                        connections_list = get_connections(static_cast<Node<type>*>(out), connections_list, n); //find connections in found node
-                        break;
-                    } else {
+                    if (out->get_type() != 1){
                         pe = e; //move forward
                         e = out;
+                        continue;
                     }
-                }
-                else {
+                } else if (out == pe) {
                     cout << "OUT is previous" << endl;
-                    if (in->get_type() == 1){
-                        ne = static_cast<Node<type>*>(in);
-                        cout << "Node detected: " << ne->get_node() << "; (size of connections: " << n << ")" << endl;
-                        if (connections_list == nullptr) connections_list = new Node<type>* [10] {nullptr};
-                        else {
-                            flag = 0;
-                            j = 0;
-                            while(j < n*2){
-                                if ((connections_list[j])->get_node() == ne->get_node()){
-                                    //if (connections_list[j+1] == snode){
-                                        cout << "Connection exists" << endl;
-                                        flag = 1;
-                                        break;
-                                    //}
-                                }
-                                cout << j << endl;
-                                cout << "T: " << connections_list[j]->get_node() << " - " << connections_list[j+1]->get_node() << endl;
-                                cin >> k;
-                                k = 0;
-                                j=+2;
-                            }
-                            if (flag) break; //connection exists
-
-                            /*temp_list = new Node<type>* [10];
-                            for (unsigned int j = 0; j < n*2; j=+2){
-                                temp_list[j] = connections_list[j];
-                                temp_list[j+1] = connections_list[j+1];
-                            }
-                            delete[] connections_list;
-                            connections_list = temp_list;*/
-                        }
-
-                        connections_list[n*2] = snode; //add connection
-                        connections_list[(n*2)+1] = ne;
-                        cout << "Connection: " << snode->get_node() << " - " << ne->get_node() << endl;
-                        n++;
-
-                        connections_list = get_connections(ne, connections_list, n); //find connections in found node
-                        break;
-                    } else {
+                    if (in->get_type() != 1){
                         pe = e; //move forward
                         e = in;
+                        continue;
                     }
+                    out = in;
+                } else cout << "Something goes wrong. :/" << endl; //for test purpose
+
+                ne = static_cast<Node<type>*>(out);
+                cout << "Node detected: " << ne->get_node() << "; (size of connections: " << n << ")" << endl;
+                if (connections_list == nullptr) connections_list = new Node<type>* [100] {nullptr};
+                else {
+                    flag = 0;
+                    for (j = 0; j < n*2; j+=2){
+                        if (connections_list[j] == ne && connections_list[j+1] == snode){
+                            cout << "Connection exists" << endl;
+                            flag = 1;
+                            break;
+                        }
+                        cout << j << endl;
+                        cout << "T: " << connections_list[j]->get_node() << " - " << connections_list[j+1]->get_node() << endl;
+                    }
+                if (flag) break; //connection exists
+
+                /*temp_list = new Node<type>* [n*2+4] {nullptr};
+                    for (j = 0; j < n*2; j=+2){
+                        temp_list[j] = connections_list[j];
+                        temp_list[j+1] = connections_list[j+1];
+                    }
+
+                    delete[] connections_list;
+                    connections_list = temp_list;*/
                 }
+
+                connections_list[n*2] = snode; //add connection
+                connections_list[(n*2)+1] = ne;
+                cout << "Connection: " << snode->get_node() << " - " << ne->get_node() << endl;
+                n++;
+
+                connections_list = get_connections(static_cast<Node<type>*>(out), connections_list, n); //find connections in found node
+                break;
             }
         }
         cout << "End working: " << snode->get_node() << endl;
