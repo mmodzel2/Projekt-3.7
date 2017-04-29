@@ -278,7 +278,16 @@ template <class type>
         unsigned long j = 0, g = 0, k[3][2] = {{0,0},{0,0},{0,0}};
 
         if (coefficients_ == nullptr) return 0;
-        if (rows_ != columns_ || rows_ == 0) return 0; //matrix is not nxn
+        if (rows_ != columns_){ //matrix is not nxn
+               if (n == nullptr || m == nullptr) return 0;
+               for (unsigned long i = 0; i < rows_; i++)
+                    if (n[i] == 0) j++;
+               for (unsigned long i = 0; i < columns_; i++)
+                    if (m[i] == 0) g++;
+               if (j != g) return 0; //matrix with wrong size for calculate of determination
+               j = 0;
+               g = 0;
+        }
         bool flag1 = 0, flag2 = 0;
 
         if (n == nullptr){ //create object to use in function
@@ -292,15 +301,31 @@ template <class type>
             flag2 = 1;
             }
 
-        for (unsigned long i = 0; i < rows_; i++){ //get first coefficients
-            if (n[i] == 0) {
-                if (j < 3) k[j][0] = i;
-                j++;
+        if (rows_ == columns_)
+            for (unsigned long i = 0; i < rows_; i++){ //get first coefficients
+                if (n[i] == 0){
+                    if (j < 3) k[j][0] = i;
+                    j++;
                 }
-            if (m[i] == 0) {
-                if (g < 3) k[g][1] = i;
-                g++;
+                if (m[i] == 0){
+                    if (g < 3) k[g][1] = i;
+                    g++;
                 }
+            }
+
+        else {
+            for (unsigned long i = 0; i < rows_; i++){ //get first coefficients
+                if (n[i] == 0){
+                    if (j < 3) k[j][0] = i;
+                    j++;
+                }
+            }
+            for (unsigned long i = 0; i < columns_; i++){
+                if (m[i] == 0){
+                    if (g < 3) k[g][1] = i;
+                    g++;
+                }
+            }
         }
 
         if (j == 3){ //matrix 3x3 detected
@@ -315,15 +340,17 @@ template <class type>
         } else if (j == 1) { //matrix 1x1 detected
             determination = coefficients_[(k[0][0]*columns_)+k[0][1]];
         } else { //matrix is bigger - use Laplace expansion
+            g = 0;
             n[k[0][0]] = 1;
-            for (unsigned long i = 0; i < rows_; i++)
+            for (unsigned long i = 0; i < columns_; i++)
                 if (m[i] == 0) {
                     if (coefficients_[(k[0][0]*columns_)+i] == type(0)) continue;
 
                     m[i] = 1;
-                    if ((i+k[0][0])%2==1) determination-=coefficients_[(k[0][0]*columns_)+i]*det(n,m);
+                    if ((g+k[0][0])%2==1) determination-=coefficients_[(k[0][0]*columns_)+i]*det(n,m);
                     else determination+=coefficients_[(k[0][0]*columns_)+i]*det(n,m);
                     m[i] = 0;
+                    g++;
                 }
             n[k[0][0]] = 0;
         }
@@ -464,11 +491,11 @@ template <class type>
 template <class type>
     unsigned long Matrix<type>::rank(char* n, char* m) const{
         bool flag1 = 0, flag2 = 0;
-        unsigned long k = 0;
+        unsigned long k = 0, l = 0;
         unsigned long ranks = 0, temp_ranks;
 
         if (coefficients_ == nullptr) return 0;
-        if (rows_ != columns_){ //expand matrix to work with det function
+/*        if (rows_ != columns_){ //expand matrix to work with det function
                 Matrix<type> *e = new Matrix<type> (*this);
                 if (rows_ > columns_) e->expand(rows_,rows_);
                 else e->expand(columns_,columns_);
@@ -476,7 +503,7 @@ template <class type>
                 ranks = e->rank();
                 delete e;
                 return ranks;
-        }
+        }*/ //temporary deleted
 
         if (n == nullptr){ //create object for function - blocks will be used for selecting rows and columns in matrix that won't be used in calculation
             n = new char[rows_];
@@ -492,9 +519,40 @@ template <class type>
         for (unsigned long i = 0; i < rows_; i++)
             if (n[i] == 1) k++; //calculate deleted rows
 
-        if (det(n,m) != 0) //found minor
-                ranks = rows_-k;
-        else if (rows_-1 <= k) ranks = 0;
+        if (rows_ != columns_){ //check if matrix is not nxn
+            for (unsigned long i = 0; i < columns_; i++)
+                if (m[i] == 1) l++; //calculate deleted columns
+            if (rows_-k != columns_-l){ //matrix has to be divided
+                if (rows_ > columns_){
+                    for (unsigned long i = 0; i < rows_; i++) //choose row to remove
+                        if (n[i] == 0){
+                            n[i] = 1;
+                            temp_ranks = this->rank(n,m);
+                            if (temp_ranks > ranks) ranks = temp_ranks;
+                            if (ranks == columns_) break;
+                            n[i] = 0;
+                        }
+
+                } else { // k < l
+                    for (unsigned long i = 0; i < columns_; i++) //choose columns to remove
+                        if (m[i] == 0){
+                            m[i] = 1;
+                            temp_ranks = this->rank(n,m);
+                            if (temp_ranks > ranks) ranks = temp_ranks;
+                            if (ranks == rows_) break;
+                            m[i] = 0;
+                        }
+                }
+                if (flag1 == 1) delete[] n;
+                if (flag2 == 1) delete[] m;
+                return ranks;
+            }
+        } else l = k;
+
+        if (det(n,m) != 0){ //found minor
+                if (rows_ >= columns_) ranks = rows_-k;
+                else ranks = columns_-l;
+        } else if (rows_-1 <= k || columns_-1 <= l) ranks = 0;
         else {
             for (unsigned long i = 0; i < rows_; i++){
                 if (n[i] == 0){
@@ -505,11 +563,19 @@ template <class type>
                             temp_ranks = rank(n,m);
                             if (temp_ranks > ranks) ranks = temp_ranks;
                             m[j] = 0;
-                            if (ranks == rows_-k-1) break;
+                            if (rows_ >= columns_) {
+                                if (ranks == rows_-k-1) break;
+                            } else {
+                                if (ranks == columns_-l-1) break;
+                            }
                         }
                     }
                     n[i] = 0;
-                    if (ranks == rows_-k-1) break;
+                    if (rows_ >= columns_) {
+                        if (ranks == rows_-k-1) break;
+                    } else {
+                        if (ranks == columns_-l-1) break;
+                    }
                 }
             }
         }
@@ -521,17 +587,11 @@ template <class type>
 
 template <class type>
     char** Matrix<type>::get_minor(char* n, char* m, unsigned long matrix_ranks) const{
-        unsigned long k = 0;
+        unsigned long k = 0, l = 0;
         char** ret;
         char** temp;
 
         if (coefficients_ == nullptr) return nullptr;
-        if (rows_ != columns_ || rows_ == 0) return nullptr;
-
-        if (matrix_ranks == 0){
-            matrix_ranks = rank();
-            if (matrix_ranks == 0) return nullptr;
-        }
 
         if (n == nullptr){ //create object for function - blocks will be used for selecting rows and columns in matrix that won't be used in finding minor
             n = new char[rows_];
@@ -542,14 +602,28 @@ template <class type>
             std::fill(m, m+columns_*sizeof(char), 0);
             }
 
+        if (matrix_ranks == 0){
+            matrix_ranks = rank(n,m);
+            if (matrix_ranks == 0) {
+                delete[] n;
+                delete[] m;
+                return nullptr;
+            }
+        }
+
         for (unsigned long i = 0; i < rows_; i++)
             if (n[i] == 1) k++;
+
+        if (rows_ != columns_){ //check if matrix is not nxn
+            for (unsigned long i = 0; i < columns_; i++)
+                if (m[i] == 1) l++; //calculate deleted columns
+        } else l = k;
 
         if (det(n,m) != 0) {
             ret = new char* [2];
             ret[0] = n;
             ret[1] = m;
-        } else if (matrix_ranks >= rows_-k) ret = nullptr;
+        } else if (matrix_ranks >= rows_-k || matrix_ranks >= columns_-l) ret = nullptr;
         else {
             for (unsigned long i = 0; i < rows_; i++){
                 if (n[i] == 0){

@@ -2,7 +2,7 @@
 * Name: electronics.hpp
 * Purpose: Solving problems with electronics
 * @author mmodzel2
-* @version 0.45 29-04-2017
+* @version 0.5 29-04-2017
 */
 
 #ifndef _ELECTR_HPP
@@ -461,7 +461,7 @@ template <class type>
                                                 IB->set(m,0,-var1->con);
                                         }
                                     }*/
-                                    I->expand(I->get_rows()+1, I->get_columns()+1);
+                                    I->expand(I->get_rows()+1, I->get_columns());
                                     IB->expand(IB->get_rows()+1, 1);
                                     I->set(I->get_rows()-1,i,1);
                                     IB->set(IB->get_rows()-1,0,var1->con);
@@ -519,7 +519,7 @@ template <class type>
             solution = equation(*I, *IB);
             if (solution == nullptr) cout << "No solution..." << endl;
             else{
-            for (unsigned int m = 0; m < IB->get_rows(); m++)
+            for (unsigned int m = 0; m < I->get_columns(); m++)
             {
                 cout << solution[m].str() << endl;
             }

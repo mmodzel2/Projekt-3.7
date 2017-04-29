@@ -23,6 +23,12 @@ std::stringstream* equation(Matrix<double> A, Matrix<double> B){
     std::stringstream* str;
     unsigned long rank_AB;
 
+    /*if (A.get_rows() > A.get_columns()) {
+            A.expand(A.get_rows(),A.get_rows());
+            //B.expand(A.get_rows(),1);
+            return equation(A,B);
+    }*/
+
     Matrix<double> *AB = new Matrix<double> (A);
 
     AB->expand(A.get_rows(),A.get_columns()+1); //expand matrix to A|B
@@ -31,6 +37,9 @@ std::stringstream* equation(Matrix<double> A, Matrix<double> B){
         AB->set(i, A.get_columns(), B.get(i,0));
 
     rank_AB = AB->rank(); //calculate rank of expanded matrix
+    std::cout << "rank_A: " << A.rank() << std::endl;
+    std::cout << "rank_AB: " << rank_AB << std::endl;
+
     if (rank_AB == 0){ //matrix with zero coefficients
         str = new std::stringstream[B.get_rows()];
 
@@ -53,6 +62,7 @@ std::stringstream* equation(Matrix<double> A, Matrix<double> B){
     if (minor != nullptr){
         for (i = 0; i < A.get_rows(); i++)
             if (minor[0][i] == 0) k++;
+
         Matrix<double> *m = new Matrix<double> (k,k); //create matrix with independent solutions
         for (i = 0; i < A.get_rows(); i++){
             if (minor[0][i] == 0){
@@ -104,34 +114,33 @@ std::stringstream* equation(Matrix<double> A, Matrix<double> B){
             }
         }
 
-        str = new std::stringstream[B.get_rows()];
+        str = new std::stringstream[A.get_columns()];
 
-        for (i = 0, l = 0; i < A.get_rows(); i++){
+        for (i = 0, l = 0; i < A.get_columns(); i++){
             if (minor[1][i] == 0){
                 str[i].str(""); //clean stringstream
                 //create solutions in stringstream
                 for (j = 0, p = 0; j < A.get_columns(); j++){
                      if (minor[1][j] == 1){
-                            if (x[l*(k+1)+p] != 0) str[i] << x[l*(k+1)+p] << "*x" << j << "+";
+                            if (x[l*(k+1)+p] != 0)
+                                str[i] << x[l*(k+1)+p] << "*x" << j << "+";
                             p++;
                      }
                      if (p == k){
                             if (x[l*(k+1)+p] != 0) str[i] << x[l*(k+1)+p];
-                                else {
-                                    if (str[i].str().empty()){ //if no values in stringstream add 0
-                                        str[i] << 0;
-                                    } else { //if zero on the end remove "+"
-                                        str[i].seekp(-1,std::ios_base::end);
-                                        str[i] << " ";
-                                    }
+                            else {
+                                if (str[i].str().empty()){ //if no values in stringstream add 0
+                                    str[i] << 0;
+                                } else { //if zero on the end remove "+"
+                                    str[i].seekp(-1,std::ios_base::end);
+                                    str[i] << " ";
+                                }
                             }
                             break;
-                        }
+                    }
                 }
                 l++;
-            } else {
-                str[i] << "x" << i;
-            }
+            } else str[i] << "x" << i;
         }
 
         delete inv;
