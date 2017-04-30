@@ -21,7 +21,9 @@ std::stringstream* equation(Matrix<double> A, Matrix<double> B){
     double *s, *x;
     char** minor;
     std::stringstream* str;
-    unsigned long rank_AB;
+    unsigned long rank_A, rank_AB;
+    char* mn;
+    char* mm;
 
     /*if (A.get_rows() > A.get_columns()) {
             A.expand(A.get_rows(),A.get_rows());
@@ -36,6 +38,7 @@ std::stringstream* equation(Matrix<double> A, Matrix<double> B){
     for (unsigned long i = 0; i < A.get_rows(); i++)
         AB->set(i, A.get_columns(), B.get(i,0));
 
+    /*std::cout << "RankAB..." << std::endl;
     rank_AB = AB->rank(); //calculate rank of expanded matrix
     std::cout << "rank_A: " << A.rank() << std::endl;
     std::cout << "rank_AB: " << rank_AB << std::endl;
@@ -49,15 +52,28 @@ std::stringstream* equation(Matrix<double> A, Matrix<double> B){
         }
         delete AB;
         return str;
-    }
+    }*/
 
-    if (rank_AB != A.rank()){ //Rouché–Capelli theorem
-        delete AB;
-        return nullptr;
-    }
+    //create object for function - blocks will be used for selecting rows and columns in matrix that won't be used in finding minor
+    mn = new char[A.get_rows()];
+    std::fill(mn, mn+A.get_rows()*sizeof(char), 0);
+
+    mm = new char[A.get_columns()];
+    std::fill(mm, mm+A.get_columns()*sizeof(char), 0);
+
+    rank_A = A.rank(mn,mm);
     delete AB;
 
-    minor = A.get_minor(); //get minor in which solutions are independent
+    /*if (rank_AB != rank_A){ //Rouché–Capelli theorem
+        delete[] mn;
+        delete[] mm;
+        return nullptr;
+    }*/
+
+    std::cout << "RankA..." << rank_A << std::endl;
+    std::cout << "Minor..." << std::endl;
+    minor = A.get_minor(mn,mm,rank_A); //get minor in which solutions are independent
+    std::cout << "Minor found..." << std::endl;
 
     if (minor != nullptr){
         for (i = 0; i < A.get_rows(); i++)
@@ -76,12 +92,22 @@ std::stringstream* equation(Matrix<double> A, Matrix<double> B){
             }
         }
 
+        std::cout << "Inverse..." << std::endl;
         Matrix<double> *inv = m->inverse(); //inverse independent solution
         assert (inv != nullptr);
+
+            /* Show matrix - for test purpose */
+            for (unsigned int i = 0; i < inv->get_rows(); i++){
+                for (unsigned int j = 0; j < inv->get_columns(); j++)
+                    std::cout << inv->get(i,j) << " ";
+                std::cout << std::endl;
+            }
 
         delete m;
 
         k = A.get_columns() - k;
+
+        std::cout << "Calculating..." << std::endl;
 
         s = new double [l*(k+1)];
         x = new double [l*(k+1)];
@@ -146,6 +172,9 @@ std::stringstream* equation(Matrix<double> A, Matrix<double> B){
         delete inv;
         delete[] s;
         delete[] x;
+
+        delete[] mn;
+        delete[] mm;
 
         return str;
     }

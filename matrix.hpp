@@ -2,7 +2,7 @@
 * Name: matrix.hpp
 * Purpose: Matrix and solving equations
 * @author mmodzel2
-* @version 1.0 20-04-2017
+* @version 1.1 30-04-2017
 */
 
 #ifndef _MATRIX_HPP
@@ -344,10 +344,13 @@ template <class type>
             n[k[0][0]] = 1;
             for (unsigned long i = 0; i < columns_; i++)
                 if (m[i] == 0) {
-                    if (coefficients_[(k[0][0]*columns_)+i] == type(0)) continue;
+                    if (coefficients_[(k[0][0]*columns_)+i] == type(0)){
+                        g++;
+                        continue;
+                    }
 
                     m[i] = 1;
-                    if ((g+k[0][0])%2==1) determination-=coefficients_[(k[0][0]*columns_)+i]*det(n,m);
+                    if ((g%2)==1) determination-=coefficients_[(k[0][0]*columns_)+i]*det(n,m);
                     else determination+=coefficients_[(k[0][0]*columns_)+i]*det(n,m);
                     m[i] = 0;
                     g++;
@@ -396,11 +399,12 @@ template <class type>
 template <class type>
     Matrix<type>* Matrix<type>::inverse() const{
         char *n, *m;
-        long int determination, div;
+        type determination, div;
         if (coefficients_ == nullptr) return nullptr;
         if (rows_ != columns_ || rows_ == 0) return nullptr;
 
         div = this->det();
+        std::cout << "Det: " << div << std::endl;
         if (div == 0) return nullptr; //inverse matrix does not exist
 
         if (rows_ == 1){
