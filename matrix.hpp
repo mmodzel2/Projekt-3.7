@@ -2,7 +2,7 @@
 * Name: matrix.hpp
 * Purpose: Matrix and solving equations
 * @author mmodzel2
-* @version 1.1 30-04-2017
+* @version 1.2 1-05-2017
 */
 
 #ifndef _MATRIX_HPP
@@ -405,7 +405,7 @@ template <class type>
 
         div = this->det();
         std::cout << "Det: " << div << std::endl;
-        if (div == 0) return nullptr; //inverse matrix does not exist
+        if (div == type(0)) return nullptr; //inverse matrix does not exist
 
         if (rows_ == 1){
             Matrix<type> *matrix = new Matrix<type> (this->rows_, this->columns_);
@@ -426,7 +426,7 @@ template <class type>
             for (unsigned long j = 0; j < columns_; j++){
                 m[j] = 1;
                 //count minor
-                if ((i+j)%2 == 1) determination = (-1)*this->det(n,m);
+                if ((i+j)%2 == 1) determination = type(-1)*this->det(n,m);
                 else determination = this->det(n,m);
                 matrix->set(j,i, determination/div); //set transposed value in invered matrix
                 m[j] = 0;
@@ -553,10 +553,10 @@ template <class type>
             }
         } else l = k;
 
-        if (det(n,m) != 0){ //found minor
+        if (det(n,m) != type(0)){ //found minor
                 if (rows_ >= columns_) ranks = rows_-k;
                 else ranks = columns_-l;
-        } else if (rows_-1 <= k || columns_-1 <= l) ranks = 0;
+        } else if (rows_ == k || columns_ == l) ranks = 0;
         else {
             for (unsigned long i = 0; i < rows_; i++){
                 if (n[i] == 0){
@@ -623,7 +623,7 @@ template <class type>
                 if (m[i] == 1) l++; //calculate deleted columns
         } else l = k;
 
-        if (det(n,m) != 0) {
+        if (det(n,m) != type(0)) {
             ret = new char* [2];
             ret[0] = n;
             ret[1] = m;

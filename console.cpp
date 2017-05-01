@@ -1,6 +1,6 @@
 /*
 * Name: console.cpp
-* Purpose: Matrix and solving equations
+* Purpose: Console command interface
 * @author mmodzel2
 * @version 1.0 20-04-2017
 */
