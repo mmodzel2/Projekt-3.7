@@ -63,6 +63,8 @@ template <class type>
             Electronics<type>* get_connect_out();
 
             virtual unsigned int get_type() = 0;
+
+            static unsigned int console_connect(Console* console, void** args);
     };
 
 template <class type>
@@ -70,9 +72,9 @@ template <class type>
         private:
             Electronics<type>* (*connections_);
             unsigned int connection_count_;
-            unsigned int node_;
+            std::string node_;
         public:
-            Node();
+            Node(std::string node_name);
             ~Node();
             void add(Electronics<type>* c);
 
@@ -85,10 +87,11 @@ template <class type>
             unsigned int get_type();
 
             Electronics<type>* get(unsigned int n);
-            unsigned int get_node() const;
+            std::string get_node() const;
             unsigned int get_connection_count() const;
 
-            static unsigned int node_number;
+            static unsigned int create(Console* console, void** args);
+            //static unsigned int node_number;
     };
 
 template <class type>
@@ -106,6 +109,7 @@ template <class type>
             type current(type voltage, bool out, int);
 
             unsigned int get_type();
+            static unsigned int create(Console* console, void** args);
     };
 
 template <class type>
@@ -123,6 +127,7 @@ template <class type>
             type current(type voltage, bool out, int);
 
             unsigned int get_type();
+            static unsigned int create(Console* console, void** args);
     };
 
 template <class type>
@@ -141,6 +146,7 @@ template <class type>
             type current(type voltage, bool out, int);
 
             unsigned int get_type();
+            static unsigned int create(Console* console, void** args);
     };
 
 template <class type>
@@ -159,6 +165,7 @@ template <class type>
             type current(type voltage, bool out, int);
 
             unsigned int get_type();
+            static unsigned int create(Console* console, void** args);
     };
 
 template <class type>
@@ -176,6 +183,7 @@ template <class type>
             type current(type voltage, bool out, int);
 
             unsigned int get_type();
+            static unsigned int create(Console* console, void** args);
     };
 
 template <class type>
@@ -194,6 +202,7 @@ template <class type>
             type current(type voltage, bool out, int);
 
             unsigned int get_type();
+            static unsigned int create(Console* console, void** args);
     };
 
 template <class type>
@@ -212,6 +221,7 @@ template <class type>
             type current(type voltage, bool out, int);
 
             unsigned int get_type();
+            static unsigned int create(Console* console, void** args);
     };
 
 template <class type>
@@ -229,6 +239,7 @@ template <class type>
             type current(type voltage, bool out, int);
 
             unsigned int get_type();
+            static unsigned int create(Console* console, void** args);
     };
 
 template <class type>
@@ -246,13 +257,16 @@ template <class type>
             type current(type voltage, bool out, int);
 
             unsigned int get_type();
+            static unsigned int create(Console* console, void** args);
     };
 
 template <class type>
     class Current_Solutions{
         private:
-            type* Voltages_;
-            type* Currents_;
+            type* voltages_;
+            type* currents_;
+            std::string* connections_;
+            unsigned int connections_count_;
         public:
             Current_Solutions();
             ~Current_Solutions();
@@ -261,6 +275,9 @@ template <class type>
             Node<type>** get_loops(Node<type>* connections_list[], unsigned int n, Node<type>* loops[], unsigned int k, unsigned int l);
             void get_connection_current(Node<type>* connections_list[], Electronics<type>* interconnections_list[], unsigned int i, unsigned int n, Matrix<type>* I, Matrix<type>* IB);
             unsigned int get_connection_voltage(Node<type>* connections_list[], Electronics<type>* interconnections_list[], unsigned int i, unsigned int n, Matrix<type>* I, Matrix<type>* IB, unsigned int mr, type dir);
+            void get_solutions(Console* console);
+
+            static unsigned int console_solve(Console* console, void** args);
     };
 
 template <class type>
@@ -292,8 +309,51 @@ template <class type>
     }
 
 template <class type>
-    Node<type>::Node() : connections_(nullptr), connection_count_(0){
-        node_ = ++node_number;
+    unsigned int Electronics<type>::console_connect(Console* console, void** args){
+        if (args[0] == nullptr || args[1] == nullptr || args[2] == nullptr || args[3] == nullptr){
+            (console->get_stream()) << "Bad arguments." << std::endl;
+            return 1;
+        }
+
+        const char* c1 = ((const char*)args[0]);
+        const char* c2 = ((const char*)args[2]);
+
+        if (!(c1[0] == 'a' || c1[0] == 'A' || c1[0] == '0' || c1[0] == 'b' || c1[0] == 'B' || c1[0] == '1')){
+            (console->get_stream()) << "Bad arguments." << std::endl;
+            return 1;
+        }
+        if (!(c2[0] == 'a' || c2[0] == 'A' || c2[0] == '0' || c2[0] == 'b' || c2[0] == 'B' || c2[0] == '1')){
+            (console->get_stream()) << "Bad arguments." << std::endl;
+            return 1;
+        }
+
+        if (((Electronics<double>*)args[1])->get_type() == 1){ //Node detected
+            ((Node<double>*)args[1])->add((Electronics<double>*)args[3]);
+            (console->get_stream()) << "Node 1 connected." << std::endl;
+        } else {
+            if (c1[0] == 'a' || c1[0] == 'A' || c1[0] == '0')
+               ((Electronics<double>*)args[1])->connect_in((Electronics<double>*)args[3]);
+            else if (c1[0] == 'b' ||c1[0] == 'B' || c1[0] == '1')
+                ((Electronics<double>*)args[1])->connect_out((Electronics<double>*)args[3]);
+        }
+        if (((Electronics<double>*)args[3])->get_type() == 1){ //Node detected
+            ((Node<double>*)args[3])->add((Electronics<double>*)args[0]);
+            (console->get_stream()) << "Node 2 connected." << std::endl;
+        } else {
+            if (c2[0] == 'a' || c2[0] == 'A' || c2[0] == '0')
+                ((Electronics<double>*)args[3])->connect_in((Electronics<double>*)args[1]);
+            else if (c2[0] == 'b' ||c2[0] == 'B' || c2[0] == '1')
+                ((Electronics<double>*)args[3])->connect_out((Electronics<double>*)args[1]);
+        }
+
+        (console->get_stream()) << "Element connected." << std::endl;
+
+        return 0;
+}
+
+template <class type>
+    Node<type>::Node(std::string node_name) : connections_(nullptr), connection_count_(0), node_(node_name){
+        //node_ = ++node_number;
     }
 
 template <class type>
@@ -301,8 +361,8 @@ template <class type>
         if (connections_ != nullptr) delete[] connections_;
     }
 
-template <class type>
-    unsigned int Node<type>::node_number = 0;
+/*template <class type>
+    unsigned int Node<type>::node_number = 0;*/
 
 template <class type>
     EVariable<type>* Node<type>::voltage(std::string current, bool out){
@@ -362,7 +422,7 @@ template <class type>
     }
 
 template <class type>
-    unsigned int Node<type>::get_node() const{
+    std::string Node<type>::get_node() const{
         return node_;
     }
 
@@ -370,6 +430,44 @@ template <class type>
     unsigned int Node<type>::get_connection_count() const{
         return connection_count_;
     }
+
+template <class type>
+    unsigned int Node<type>::create(Console* console, void** args){
+        Node<double>* n;
+
+        if (args[0] == nullptr){
+            (console->get_stream()) << "Error while creating node element." << std::endl;
+            return 1;
+        }
+
+        std::string name = ((const char *)args[0]);
+        if (name.find(".") != string::npos){
+            (console->get_stream()) << "Error while creating node element. Forbidden name of node." << std::endl;
+            return 1;
+        }
+
+        try {
+            n = new Node<double>(name);
+        } catch(std::bad_alloc){
+            (console->get_stream()) << "Error while creating node element." << std::endl;
+            return 1;
+        }
+
+        unsigned int ret = console->register_variable((const char *)args[0], n);
+        if (ret == 1){
+            delete n;
+            (console->get_stream()) << "Lack of free memory. Node element cannot be created." << std::endl;
+            return 2;
+        } else if (ret == 3) {
+            delete n;
+            (console->get_stream()) << "Variable name reserved. Cannot create node element with given variable name." << std::endl;
+            return 1;
+        }
+
+        (console->get_stream()) << "Element created." << std::endl;
+
+        return 0;
+}
 
 template <class type>
     Resistor<type>::Resistor(type resistance) : r_(resistance){
@@ -407,6 +505,38 @@ template <class type>
 
 template <class type>
     unsigned int Resistor<type>::get_type(){
+        return 0;
+    }
+
+template <class type>
+    unsigned int Resistor<type>::create(Console* console, void** args){
+        Resistor<double>* r;
+
+        if (args[0] == nullptr){
+            (console->get_stream()) << "Error while creating resistant element." << std::endl;
+            return 1;
+        }
+
+        try {
+            r = new Resistor<double>(*((double *)args[1]));
+        } catch(std::bad_alloc){
+            (console->get_stream()) << "Error while creating resistant element." << std::endl;
+            return 1;
+        }
+
+        unsigned int ret = console->register_variable((const char *)args[0], r);
+        if (ret == 1){
+            delete r;
+            (console->get_stream()) << "Lack of free memory. Resistance element cannot be created." << std::endl;
+            return 2;
+        } else if (ret == 3) {
+            delete r;
+            (console->get_stream()) << "Variable name reserved. Cannot create resistance element with given variable name." << std::endl;
+            return 1;
+        }
+
+        (console->get_stream()) << "Element created." << std::endl;
+
         return 0;
     }
 
@@ -450,6 +580,38 @@ template <class type>
     }
 
 template <class type>
+    unsigned int Capacitity<type>::create(Console* console, void** args){
+        Capacitity<double>* c;
+
+        if (args[0] == nullptr){
+            (console->get_stream()) << "Error while creating capacitity element." << std::endl;
+            return 1;
+        }
+
+        try {
+            c = new Capacitity<double>(*((double *)args[1]));
+        } catch(std::bad_alloc){
+            (console->get_stream()) << "Error while creating capacitity element." << std::endl;
+            return 1;
+        }
+
+        unsigned int ret = console->register_variable((const char *)args[0], c);
+        if (ret == 1){
+            delete c;
+            (console->get_stream()) << "Lack of free memory. Capacitity element cannot be created." << std::endl;
+            return 2;
+        } else if (ret == 3) {
+            delete c;
+            (console->get_stream()) << "Variable name reserved. Cannot create capacitity element with given variable name." << std::endl;
+            return 1;
+        }
+
+        (console->get_stream()) << "Element created." << std::endl;
+
+        return 0;
+    }
+
+template <class type>
     Inductance<type>::Inductance(type l) : l_(l){
     }
 
@@ -485,6 +647,38 @@ template <class type>
 
 template <class type>
     unsigned int Inductance<type>::get_type(){
+        return 0;
+    }
+
+template <class type>
+    unsigned int Inductance<type>::create(Console* console, void** args){
+        Inductance<double>* l;
+
+        if (args[0] == nullptr){
+            (console->get_stream()) << "Error while creating inductance element." << std::endl;
+            return 1;
+        }
+
+        try {
+            l = new Inductance<double>(*((double *)args[1]));
+        } catch(std::bad_alloc){
+            (console->get_stream()) << "Error while creating inductance element." << std::endl;
+            return 1;
+        }
+
+        unsigned int ret = console->register_variable((const char *)args[0], l);
+        if (ret == 1){
+            delete l;
+            (console->get_stream()) << "Lack of free memory. Inductance element cannot be created." << std::endl;
+            return 2;
+        } else if (ret == 3) {
+            delete l;
+            (console->get_stream()) << "Variable name reserved. Cannot create inductance element with given variable name." << std::endl;
+            return 1;
+        }
+
+        (console->get_stream()) << "Element created." << std::endl;
+
         return 0;
     }
 
@@ -534,6 +728,38 @@ template <class type>
     }
 
 template <class type>
+    unsigned int Current_source<type>::create(Console* console, void** args){
+        Current_source<double>* j;
+
+        if (args[0] == nullptr){
+            (console->get_stream()) << "Error while creating current supply element." << std::endl;
+            return 1;
+        }
+
+        try {
+            j = new Current_source<double>(*((double *)args[1]));
+        } catch(std::bad_alloc){
+            (console->get_stream()) << "Error while creating current supply element." << std::endl;
+            return 1;
+        }
+
+        unsigned int ret = console->register_variable((const char *)args[0], j);
+        if (ret == 1){
+            delete j;
+            (console->get_stream()) << "Lack of free memory. Current supply element cannot be created." << std::endl;
+            return 2;
+        } else if (ret == 3) {
+            delete j;
+            (console->get_stream()) << "Variable name reserved. Cannot create current supply element with given variable name." << std::endl;
+            return 1;
+        }
+
+        (console->get_stream()) << "Element created." << std::endl;
+
+        return 0;
+    }
+
+template <class type>
     Current_disource<type>::Current_disource(type l, std::string current) : l_(l), current_(current){
     }
 
@@ -575,6 +801,43 @@ template <class type>
 template <class type>
     unsigned int Current_disource<type>::get_type(){
         return 3;
+    }
+
+template <class type>
+    unsigned int Current_disource<type>::create(Console* console, void** args){
+        Current_disource<double>* j;
+        if (args[0] == nullptr || args[2] == nullptr){
+            (console->get_stream()) << "Bad arguments." << std::endl;
+            return 1;
+        }
+
+        const char* s = (const char*)args[2];
+
+        if (s[0] != 'I'){
+            (console->get_stream()) << "Bad current source." << std::endl;
+        }
+
+        try {
+            j = new Current_disource<double>(*((double *)args[1]), s);
+        } catch(std::bad_alloc){
+            (console->get_stream()) << "Error while creating voltage supply element." << std::endl;
+            return 1;
+        }
+
+        unsigned int ret = console->register_variable((const char *)args[0], j);
+        if (ret == 1){
+            delete j;
+            (console->get_stream()) << "Lack of free memory. Voltage supply element cannot be created." << std::endl;
+            return 2;
+        } else if (ret == 3) {
+            delete j;
+            (console->get_stream()) << "Variable name reserved. Cannot create voltage supply element with given variable name." << std::endl;
+            return 1;
+        }
+
+        (console->get_stream()) << "Element created." << std::endl;
+
+        return 0;
     }
 
 template <class type>
@@ -622,6 +885,44 @@ template <class type>
     }
 
 template <class type>
+    unsigned int Current_dusource<type>::create(Console* console, void** args){
+        Current_dusource<double>* j;
+
+        if (args[0] == nullptr || args[2] == nullptr){
+            (console->get_stream()) << "Bad arguments." << std::endl;
+            return 1;
+        }
+
+        const char* s = (const char*)args[2];
+
+        if (s[0] != 'U'){
+            (console->get_stream()) << "Bad voltage source." << std::endl;
+        }
+
+        try {
+            j = new Current_dusource<double>(*((double *)args[1]), s);
+        } catch(std::bad_alloc){
+            (console->get_stream()) << "Error while creating voltage supply element." << std::endl;
+            return 1;
+        }
+
+        unsigned int ret = console->register_variable((const char *)args[0], j);
+        if (ret == 1){
+            delete j;
+            (console->get_stream()) << "Lack of free memory. Voltage supply element cannot be created." << std::endl;
+            return 2;
+        } else if (ret == 3) {
+            delete j;
+            (console->get_stream()) << "Variable name reserved. Cannot create voltage supply element with given variable name." << std::endl;
+            return 1;
+        }
+
+        (console->get_stream()) << "Element created." << std::endl;
+
+        return 0;
+    }
+
+template <class type>
     Voltage_source<type>::Voltage_source(type voltage) : e_(voltage){
     }
 
@@ -660,6 +961,38 @@ template <class type>
 template <class type>
     unsigned int Voltage_source<type>::get_type(){
         return 2;
+    }
+
+template <class type>
+    unsigned int Voltage_source<type>::create(Console* console, void** args){
+        Voltage_source<double>* v;
+
+        if (args[0] == nullptr){
+            (console->get_stream()) << "Error while creating voltage supply element." << std::endl;
+            return 1;
+        }
+
+        try {
+            v = new Voltage_source<double>(*((double *)args[1]));
+        } catch(std::bad_alloc){
+            (console->get_stream()) << "Error while creating voltage supply element." << std::endl;
+            return 1;
+        }
+
+        unsigned int ret = console->register_variable((const char *)args[0], v);
+        if (ret == 1){
+            delete v;
+            (console->get_stream()) << "Lack of free memory. Voltage supply element cannot be created." << std::endl;
+            return 2;
+        } else if (ret == 3) {
+            delete v;
+            (console->get_stream()) << "Variable name reserved. Cannot create voltage supply element with given variable name." << std::endl;
+            return 1;
+        }
+
+        (console->get_stream()) << "Element created." << std::endl;
+
+        return 0;
     }
 
 template <class type>
@@ -703,6 +1036,43 @@ template <class type>
     }
 
 template <class type>
+    unsigned int Voltage_disource<type>::create(Console* console, void** args){
+        Voltage_disource<double>* v;
+        if (args[0] == nullptr || args[2] == nullptr){
+            (console->get_stream()) << "Bad arguments." << std::endl;
+            return 1;
+        }
+
+        const char* s = (const char*)args[2];
+
+        if (s[0] != 'I'){
+            (console->get_stream()) << "Bad current source." << std::endl;
+        }
+
+        try {
+            v = new Voltage_disource<double>(*((double *)args[1]), s);
+        } catch(std::bad_alloc){
+            (console->get_stream()) << "Error while creating voltage supply element." << std::endl;
+            return 1;
+        }
+
+        unsigned int ret = console->register_variable((const char *)args[0], v);
+        if (ret == 1){
+            delete v;
+            (console->get_stream()) << "Lack of free memory. Voltage supply element cannot be created." << std::endl;
+            return 2;
+        } else if (ret == 3) {
+            delete v;
+            (console->get_stream()) << "Variable name reserved. Cannot create voltage supply element with given variable name." << std::endl;
+            return 1;
+        }
+
+        (console->get_stream()) << "Element created." << std::endl;
+
+        return 0;
+    }
+
+template <class type>
     Voltage_dusource<type>::Voltage_dusource(type b, std::string voltage) : b_(b), voltage_(voltage){
     }
 
@@ -743,13 +1113,52 @@ template <class type>
     }
 
 template <class type>
-    Current_Solutions<type>::Current_Solutions() : Voltages_(nullptr), Currents_(nullptr){
+    unsigned int Voltage_dusource<type>::create(Console* console, void** args){
+        Voltage_dusource<double>* v;
+
+        if (args[0] == nullptr || args[2] == nullptr){
+            (console->get_stream()) << "Bad arguments." << std::endl;
+            return 1;
+        }
+
+        const char* s = (const char*)args[2];
+
+        if (s[0] != 'U'){
+            (console->get_stream()) << "Bad current source." << std::endl;
+        }
+
+        try {
+            v = new Voltage_dusource<double>(*((double *)args[1]), s);
+        } catch(std::bad_alloc){
+            (console->get_stream()) << "Error while creating voltage supply element." << std::endl;
+            return 1;
+        }
+
+        unsigned int ret = console->register_variable((const char *)args[0], v);
+        if (ret == 1){
+            delete v;
+            (console->get_stream()) << "Lack of free memory. Voltage supply element cannot be created." << std::endl;
+            return 2;
+        } else if (ret == 3) {
+            delete v;
+            (console->get_stream()) << "Variable name reserved. Cannot create voltage supply element with given variable name." << std::endl;
+            return 1;
+        }
+
+        (console->get_stream()) << "Element created." << std::endl;
+
+        return 0;
+    }
+
+template <class type>
+    Current_Solutions<type>::Current_Solutions() : voltages_(nullptr), currents_(nullptr), connections_(nullptr), connections_count_(0){
     }
 
 template <class type>
     Current_Solutions<type>::~Current_Solutions(){
-        if (Voltages_ != nullptr) delete[] Voltages_;
-        if (Currents_ != nullptr) delete[] Currents_;
+        if (connections_ != nullptr) delete[] connections_;
+        if (voltages_ != nullptr) delete[] voltages_;
+        if (currents_ != nullptr) delete[] currents_;
     }
 
 template <class type>
@@ -775,7 +1184,6 @@ template <class type>
 
        if (en == e) { //Nodes were not created
             cout << "Nodes weren't created" << endl;
-
        } else {
            cout << "Nodes created" << endl;
             if (en == nullptr){
@@ -792,12 +1200,19 @@ template <class type>
             cout << "Start node: " << (static_cast<Node<type>*>(en))->get_node() << endl;
             connection_list = get_connections(static_cast<Node<type>*>(en), nullptr, interconnection_list, n);
             cout << "Connections count: " << n << endl;
-            /* For debug purpose */
+
+            if (connections_ != nullptr) delete[] connections_;
+            connections_ = new std::string[n];
+            connections_count_ = n;
+
+            /* Create names of connections. Build of name:
+               "One node"."Second node" */
             for (unsigned int i = 0; i < n; i++){
                 cout << connection_list[i*2]->get_node() << " - " << connection_list[i*2+1]->get_node() << endl;
+                connections_[i] = connection_list[i*2]->get_node()+"."+connection_list[i*2+1]->get_node();
             }
-            /* End */
 
+            /* Find nodes in circuit - they will be needed to set currents in connections */
             Node<type>** nodes = new Node<type>* [n];
 
             //for (unsigned int i = 0; i < n; i++) nodes[i] = nullptr;
@@ -811,6 +1226,14 @@ template <class type>
                     }
                 if (flag == 0)
                     nodes[nodes_count++] = connection_list[i*2];
+
+                for (unsigned int j = 0; j < nodes_count; j++)
+                    if (nodes[j] == connection_list[i*2+1]){
+                        flag = 1;
+                        break;
+                    }
+                if (flag == 0)
+                    nodes[nodes_count++] = connection_list[i*2+1];
             }
 
             cout << "Nodes count: " << nodes_count << endl;
@@ -924,25 +1347,102 @@ template <class type>
                 if (connection_loops[m*(n+1)] != nullptr){
                     I->expand(I->get_rows()+1, I->get_columns());
                     IB->expand(IB->get_rows()+1, 1);
-                    ret = 0;
-                    for (unsigned int j = 0; j < n; j++){
-                        if (connection_loops[m*(n+1)+j+1] == nullptr) break; //end of loop
 
-                        for (unsigned int i = 0; i < n; i++){ //find connection
-                            if (connection_list[i*2] == connection_loops[m*(n+1)+j] && connection_list[i*2+1] == connection_loops[m*(n+1)+j+1]){ //good direction
-                                cout << connection_list[i*2]->get_node() << "->" << connection_list[i*2+1]->get_node() << endl;
-                                ret = get_connection_voltage(connection_list, interconnection_list, i, n, I, IB, I->get_rows()-1, type(1));
+                    ret = 0;
+                    if (connection_loops[m*(n+1)] == connection_loops[m*(n+1)+2]){ //doubled connection
+                        unsigned int j = 0;
+
+                        /* Find repeating connections and create loops for them */
+                        while(1){
+                            for (; j < n; j++){ //find first repeating connection that does not have unknown voltage
+                                if (connection_list[j*2] == connection_loops[m*(n+1)] && connection_list[j*2+1] == connection_loops[m*(n+1)+1]){ //good direction
+                                    ret = get_connection_voltage(connection_list, interconnection_list, j, n, I, IB, I->get_rows()-1, type(1));
+                                    break;
+                                }
+                                else if (connection_list[j*2] == connection_loops[m*(n+1)+1] && connection_list[j*2+1] == connection_loops[m*(n+1)]){ //reverse direction
+                                    ret = get_connection_voltage(connection_list, interconnection_list, j, n, I, IB, I->get_rows()-1, type(-1));
+                                    break;
+                                }
+                            }
+                            if (j >= n){ //connection with known voltage has not been found
+                                I->expand(I->get_rows()-1, I->get_columns());
+                                IB->expand(IB->get_rows()-1, 1);
                                 break;
                             }
-                            else if (connection_list[i*2] == connection_loops[m*(n+1)+j+1] && connection_list[i*2+1] == connection_loops[m*(n+1)+j]){ //reverse direction
-                                ret = get_connection_voltage(connection_list, interconnection_list, i, n, I, IB, I->get_rows()-1, type(-1));
-                                break;
+                            if (ret == 1) //voltage not found
+                                continue; //find another connection that has known voltage
+
+                            unsigned i = j+1;
+                            while(1){
+                            if (i >= n) break; //all doubled connections with connection above have been found
+                                for (; i < n; i++){ //find next repeating connection and create new equation for loop containing first connection above and found one
+                                    if (connection_list[i*2] == connection_loops[m*(n+1)] && connection_list[i*2+1] == connection_loops[m*(n+1)+1]){ //good direction
+                                        /* Copy context of first equation */
+                                        I->expand(I->get_rows()+1, I->get_columns());
+                                        IB->expand(IB->get_rows()+1, 1);
+
+                                        for (unsigned int k = 0; k < I->get_columns(); k++)
+                                            I->set(I->get_rows()-1,k,I->get(I->get_rows()-2,k));
+
+                                        IB->set(IB->get_rows()-1,0,IB->get(IB->get_rows()-2,0));
+
+                                        cout << connection_list[i*2]->get_node() << "->" << connection_list[i*2+1]->get_node() << endl;
+                                        ret = get_connection_voltage(connection_list, interconnection_list, i, n, I, IB, I->get_rows()-2, type(-1));
+                                        break;
+                                    }
+                                    else if (connection_list[i*2] == connection_loops[m*(n+1)+1] && connection_list[i*2+1] == connection_loops[m*(n+1)]){ //reverse direction
+                                        /* Copy context of first equation */
+                                        I->expand(I->get_rows()+1, I->get_columns());
+                                        IB->expand(IB->get_rows()+1, 1);
+
+                                        for (unsigned int k = 0; k < I->get_columns(); k++)
+                                            I->set(I->get_rows()-1,k,I->get(I->get_rows()-2,k));
+
+                                        IB->set(IB->get_rows()-1,0,IB->get(IB->get_rows()-2,0));
+
+                                        ret = get_connection_voltage(connection_list, interconnection_list, i, n, I, IB, I->get_rows()-2, type(1));
+                                        break;
+                                    }
+                                }
+                                if (ret == 1){ //voltage not found
+                                    /* Move equation to up */
+                                    for (unsigned int k = 0; k < I->get_columns(); k++)
+                                        I->set(I->get_rows()-2,k,I->get(I->get_rows()-1,k));
+
+                                    IB->set(IB->get_rows()-2,0,I->get(IB->get_rows()-1,0));
+
+                                    /* Remove unnecessary equation */
+                                    I->expand(I->get_rows()-1, I->get_columns());
+                                    IB->expand(IB->get_rows()-1, 1);
+                                }
+                                i++;
                             }
-                        }
-                        if (ret == 1){ //voltage not found
+
+                            /* Remove unnecessary equation */
                             I->expand(I->get_rows()-1, I->get_columns());
                             IB->expand(IB->get_rows()-1, 1);
                             break;
+                        }
+                    } else {
+                        for (unsigned int j = 0; j < n; j++){
+                            if (connection_loops[m*(n+1)+j+1] == nullptr) break; //end of loop
+
+                            for (unsigned int i = 0; i < n; i++){ //find connection
+                                if (connection_list[i*2] == connection_loops[m*(n+1)+j] && connection_list[i*2+1] == connection_loops[m*(n+1)+j+1]){ //good direction
+                                    cout << connection_list[i*2]->get_node() << "->" << connection_list[i*2+1]->get_node() << endl;
+                                    ret = get_connection_voltage(connection_list, interconnection_list, i, n, I, IB, I->get_rows()-1, type(1));
+                                    break;
+                                }
+                                else if (connection_list[i*2] == connection_loops[m*(n+1)+j+1] && connection_list[i*2+1] == connection_loops[m*(n+1)+j]){ //reverse direction
+                                    ret = get_connection_voltage(connection_list, interconnection_list, i, n, I, IB, I->get_rows()-1, type(-1));
+                                    break;
+                                }
+                            }
+                            if (ret == 1){ //voltage not found
+                                I->expand(I->get_rows()-1, I->get_columns());
+                                IB->expand(IB->get_rows()-1, 1);
+                                break;
+                            }
                         }
                     }
                 }
@@ -971,12 +1471,12 @@ template <class type>
             solution = equation<type>(*I, *IB);
             if (solution == nullptr) cout << "No solution..." << endl;
             else {
-                Currents_ = new type[n];
-                Voltages_ = new type[n];
+                currents_ = new type[n];
+                voltages_ = new type[n];
                 for (unsigned int i = 0; i < n; i++){
                     //cout << "I" << connection_list[i*2]->get_node() << "." << connection_list[(i*2)+1]->get_node() << " = " << solution[i].str() << endl;
                     cout << solution[i].str() << endl;
-                    solution[i] >> Currents_[i];
+                    solution[i] >> currents_[i];
                 }
 
                 delete[] solution;
@@ -990,17 +1490,17 @@ template <class type>
                     ret = get_connection_voltage(connection_list, interconnection_list, i, n, I, IB, I->get_rows()-1, type(1));
                     if (ret == 0){
                         for (unsigned int m = 0; m < I->get_columns(); m++){
-                            sum += I->get(I->get_rows()-1,m)*Currents_[m]; //calculate known currents and add to voltage
+                            sum += I->get(I->get_rows()-1,m)*currents_[m]; //calculate known currents and add to voltage
                         }
-                        Voltages_[i] = sum-IB->get(IB->get_rows()-1,0);
+                        voltages_[i] = sum-IB->get(IB->get_rows()-1,0);
                     } else {
-                        Voltages_[i] = type(0);
+                        voltages_[i] = type(0);
                     }
                 }
                 cout << "Voltages: " << endl;
                 for (unsigned int i = 0; i < n; i++){
                     //cout << "U" << connection_list[i*2]->get_node() << "." << connection_list[(i*2)+1]->get_node() << " = " << Voltages_[i] << endl;
-                    cout << Voltages_[i] << endl;
+                    cout << voltages_[i] << endl;
                 }
                 }
             delete[] connection_list;
@@ -1164,6 +1664,22 @@ template <class type>
                         }
                 }
             }
+
+            if (flag == 0){ //there is probably connection with the same nodes making closing loop
+                if (l == 1){
+                    /* Check if connection repeats on list */
+                    for(unsigned int m = 0; m < n*2; m+=2){
+                        if (connections_list[m] == loops[k*(n+1)+l-1] && connections_list[m+1] == loops[k*(n+1)+l]){
+                            if (flag == 0) flag = 1;
+                            else {/* Found repeated connection - close a loop */
+                                loops[k*(n+1)+l+1] = loops[k*(n+1)+l-1];
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
            /* if (connections_list[j+1] == loops[k*n+l]){
                 if (flag == 0){ //add node to existing loop
                     flag = 1;
@@ -1197,10 +1713,20 @@ template <class type>
                         flag = 1;
                         break;
                     }
-                    if (flag == 0)  //loop is not cut
+                    if (flag == 0){  //loop is not cut
                          get_loops(connections_list, n, loops, j, l+1); //work on next or existing loop
+                         //cout << "REcurse..." << j << endl;
+                    }
 
-                } else cout << "Loop closed." << endl;
+                } else {
+                    cout << "Loop closed. (" << j << "," << l << ")";
+                    cout << loops[j*(n+1)+l+1]->get_node() << endl;
+                    for (unsigned int p = 0; p < n+1; p++){
+                            if (loops[j*(n+1)+p] == nullptr) continue; //loop not found
+                            cout << "->" << loops[j*(n+1)+p]->get_node();
+                    }
+                    cout << endl;
+                }
             }
         }
 
@@ -1235,6 +1761,55 @@ template <class type>
                     if (flag1 == 1) break;
                     flag1 = 1;
                 }
+            }
+
+            /* Delete repeating loops - if there is doubling connection on the list, loop with this connection might be doubled */
+            for (unsigned int i = 0; i < n; i++){
+                if (loops[i*(n+1)] != nullptr)
+                    for (unsigned int j = i+1; j < n; j++){
+                        if (loops[j*(n+1)] != nullptr){
+                            flag = 0;
+                            for (unsigned int p = 0; p < n; p++)
+                                if (loops[i*(n+1)+p] != loops[j*(n+1)+p]){
+                                    flag = 1;
+                                    break;
+                                }
+                            if (flag == 0) for (unsigned int p = 0; p < n; p++) loops[j*(n+1)+p] = nullptr;
+                        }
+                    }
+            }
+
+            /* Check if connection doubles - add loops */
+            for (unsigned int i = 0; i < n*2; i+=2){
+                for (unsigned int j = i+2; j < n*2; j+=2){
+                    if ((connections_list[i] == connections_list[j]) && (connections_list[i+1] == connections_list[j+1])){
+                        for (unsigned int p = 0; p < n; p++){ //add doubled connection
+                            if (loops[p*(n+1)] == nullptr){
+                                loops[p*(n+1)] = connections_list[i];
+                                loops[p*(n+1)+1] = connections_list[i+1];
+                                loops[p*(n+1)+2] = connections_list[i];
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+
+            /* Delete repeating loops once more - after finding connection doubling loops there can be repeating loops on the list */
+            for (unsigned int i = 0; i < n; i++){
+                if (loops[i*(n+1)] != nullptr)
+                    for (unsigned int j = i+1; j < n; j++){
+                        if (loops[j*(n+1)] != nullptr){
+                            flag = 0;
+                            for (unsigned int p = 0; p < n; p++)
+                                if (loops[i*(n+1)+p] != loops[j*(n+1)+p]){
+                                    flag = 1;
+                                    break;
+                                }
+                            if (flag == 0) loops[j*(n+1)] = nullptr;
+                        }
+                    }
             }
         }
 
@@ -1276,7 +1851,7 @@ template <class type>
             } else if (var->v[0] == 'I'){ //voltage depends from current
                     //check if this is the same current as in connection
                     if  (var->v == isstr.str()){
-                        I->set(mrow,i,(IB->get(mrow,i)+(var->con*type(dir))));
+                        I->set(mrow,i,(I->get(mrow,i)+(var->con*type(dir))));
                     } else {
                         //we have to find connection in which current var1->v goes
                         for (unsigned int m = 0; m < n; m++){
@@ -1284,7 +1859,7 @@ template <class type>
                             idsstr << "I" << connections_list[m*2]->get_node() << "." << connections_list[(m*2)+1]->get_node();
 
                             if (idsstr.str() == var->v){
-                                I->set(mrow,m,var->con*type(dir));
+                                I->set(mrow,m,I->get(mrow,m)+var->con*type(dir));
                                 break;
                             }
 
@@ -1292,7 +1867,7 @@ template <class type>
                             idsstr.str("");
                             idsstr << "I" << connections_list[(m*2)+1]->get_node() << "." << connections_list[m*2]->get_node();
                             if (idsstr.str() == var->v){
-                                I->set(mrow,m,var->con*type(-dir));
+                                I->set(mrow,m,I->get(mrow,m)+var->con*type(-dir));
                                 break;
                             }
                         }
@@ -1433,18 +2008,33 @@ template <class type>
                 delete var1;
             }
     }
-    unsigned int create_resistance(Console* console, void** args);
-    unsigned int create_capacitity(Console* console, void** args);
-    unsigned int create_inductance(Console* console, void** args);
-    unsigned int create_voltage_supply(Console* console, void** args);
-    unsigned int create_current_supply(Console* console, void** args);
-    unsigned int create_divoltage_supply(Console* console, void** args);
-    unsigned int create_duvoltage_supply(Console* console, void** args);
-    unsigned int create_dicurrent_supply(Console* console, void** args);
-    unsigned int create_ducurrent_supply(Console* console, void** args);
-    unsigned int create_node(Console* console, void** args);
-    unsigned int connect(Console* console, void** args);
-    unsigned int solve(Console* console, void** args);
+
+template <class type>
+    void Current_Solutions<type>::get_solutions(Console* console){
+        (console->get_stream()) << "Currents:" << std::endl;
+        for (unsigned int i = 0; i < connections_count_; i++){
+            (console->get_stream()) << "I" << connections_[i] << " = " << currents_[i] << std::endl;
+        }
+        (console->get_stream()) << std::endl << "Voltages:" << std::endl;
+        for (unsigned int i = 0; i < connections_count_; i++){
+            (console->get_stream()) << "U" << connections_[i] << " = " << voltages_[i] << std::endl;
+        }
+    }
+
+template <class type>
+    unsigned int Current_Solutions<type>::console_solve(Console* console, void** args){
+        if (args[0] == nullptr){
+            (console->get_stream()) << "Electronic element does not exist." << std::endl;
+            return 1;
+        }
+
+        Current_Solutions<double>* c = new Current_Solutions<double>;
+        c->solve((Electronics<double>*)args[0]);
+        c->get_solutions(console);
+        delete c;
+
+        return 0;
+    }
 
 
 #endif // _ELECTR_HPP

@@ -12,30 +12,29 @@ int main()
     string str;
     Console* console = new Console(std::cout);
 
-    console->register_instruction(create_resistance, "create_resistance", 2, 8, 10);
-    console->register_instruction(create_resistance, "cr", 2, 8, 10);
-    console->register_instruction(create_capacitity, "create_capacitity", 2, 8, 10);
-    console->register_instruction(create_capacitity, "cc", 2, 8, 10);
-    console->register_instruction(create_inductance, "create_inductance", 2, 8, 10);
-    console->register_instruction(create_inductance, "cc", 2, 8, 10);
-    console->register_instruction(create_voltage_supply, "create_voltage_supply", 2, 8, 10);
-    console->register_instruction(create_voltage_supply, "cvs", 2, 8, 10);
-    console->register_instruction(create_current_supply, "create_current_supply", 2, 8, 10);
-    console->register_instruction(create_current_supply, "ccs", 2, 8, 10);
-    console->register_instruction(create_divoltage_supply, "create_divoltage_supply", 3, 8, 10, 8);
-    console->register_instruction(create_divoltage_supply, "cdivs", 3, 8, 10, 8);
-    console->register_instruction(create_duvoltage_supply, "create_duvoltage_supply", 3, 8, 10, 8);
-    console->register_instruction(create_duvoltage_supply, "cduvs", 3, 8, 10, 8);
-    console->register_instruction(create_dicurrent_supply, "create_dicurrent_supply", 3, 8, 10, 8);
-    console->register_instruction(create_dicurrent_supply, "cdics", 3, 8, 10, 8);
-    console->register_instruction(create_ducurrent_supply, "create_ducurrent_supply", 3, 8, 10, 8);
-    console->register_instruction(create_ducurrent_supply, "cducs", 3, 8, 10, 8);
-    console->register_instruction(create_node, "create_node", 1, 8);
-    console->register_instruction(create_node, "cn", 1, 8);
-    console->register_instruction(create_ducurrent_supply, "cducs", 3, 8, 10, 8);
+    console->register_instruction(Resistor<double>::create, "create_resistance", 2, 8, 10);
+    console->register_instruction(Resistor<double>::create, "cr", 2, 8, 10);
+    console->register_instruction(Capacitity<double>::create, "create_capacitity", 2, 8, 10);
+    console->register_instruction(Capacitity<double>::create, "cc", 2, 8, 10);
+    console->register_instruction(Inductance<double>::create, "create_inductance", 2, 8, 10);
+    console->register_instruction(Inductance<double>::create, "cc", 2, 8, 10);
+    console->register_instruction(Voltage_source<double>::create, "create_voltage_supply", 2, 8, 10);
+    console->register_instruction(Voltage_source<double>::create, "cvs", 2, 8, 10);
+    console->register_instruction(Current_source<double>::create, "create_current_supply", 2, 8, 10);
+    console->register_instruction(Current_source<double>::create, "ccs", 2, 8, 10);
+    console->register_instruction(Voltage_disource<double>::create, "create_divoltage_supply", 3, 8, 10, 8);
+    console->register_instruction(Voltage_disource<double>::create, "cdivs", 3, 8, 10, 8);
+    console->register_instruction(Voltage_dusource<double>::create, "create_duvoltage_supply", 3, 8, 10, 8);
+    console->register_instruction(Voltage_dusource<double>::create, "cduvs", 3, 8, 10, 8);
+    console->register_instruction(Current_disource<double>::create, "create_dicurrent_supply", 3, 8, 10, 8);
+    console->register_instruction(Current_disource<double>::create, "cdics", 3, 8, 10, 8);
+    console->register_instruction(Current_dusource<double>::create, "create_ducurrent_supply", 3, 8, 10, 8);
+    console->register_instruction(Current_dusource<double>::create, "cducs", 3, 8, 10, 8);
+    console->register_instruction(Node<double>::create, "create_node", 1, 8);
+    console->register_instruction(Node<double>::create, "cn", 1, 8);
 
-    console->register_instruction(connect, "connect", 4, 8, 11, 8, 11);
-    console->register_instruction(solve, "solve",1,11);
+    console->register_instruction(Electronics<double>::console_connect, "connect", 4, 8, 11, 8, 11);
+    console->register_instruction(Current_Solutions<double>::console_solve, "solve",1,11);
 
     console->parse("cvs e 30");
     console->parse("cr r1 10");
@@ -195,6 +194,101 @@ int main()
     delete r2;
     cout << "Hello world!" << endl;
     return 0;
+}
+*/
+
+
+/*#include <iostream>
+
+#include "electronics.hpp"
+
+using namespace std;
+
+int main()
+{
+    Node<double>* n1 = new Node<double>;
+    cout << n1->get_node() << endl;
+    Node<double>* n2 = new Node<double>;
+    cout << n2->get_node() << endl;
+    Node<double>* n3 = new Node<double>;
+    cout << n3->get_node() << endl;
+    Node<double>* n4 = new Node<double>;
+    cout << n4->get_node() << endl;
+    Node<double>* n5 = new Node<double>;
+    cout << n5->get_node() << endl;
+    Node<double>* n6 = new Node<double>;
+    cout << n6->get_node() << endl;
+    Node<double>* n7 = new Node<double>;
+    cout << n7->get_node() << endl;
+    Node<double>* n8 = new Node<double>;
+    cout << n8->get_node() << endl;
+    Node<double>* n9 = new Node<double>;
+    cout << n9->get_node() << endl;
+    Node<double>* n10 = new Node<double>;
+    cout << n10->get_node() << endl;
+
+    Voltage_source<double>* r1 = new Voltage_source<double>(3);
+    Resistor<double>* r2 = new Resistor<double>(1);
+    Resistor<double>* r3 = new Resistor<double>(3);
+    Resistor<double>* r4 = new Resistor<double>(3);
+    Resistor<double>* r5 = new Resistor<double>(1);
+    Resistor<double>* r6 = new Resistor<double>(3);
+    Resistor<double>* r7 = new Resistor<double>(2);
+    Resistor<double>* r8 = new Resistor<double>(2);
+    Resistor<double>* r9 = new Resistor<double>(24);
+    Resistor<double>* r10 = new Resistor<double>(2);
+    Resistor<double>* r11 = new Resistor<double>(8);
+    Resistor<double>* r12 = new Resistor<double>(8);
+    Resistor<double>* r13 = new Resistor<double>(8);
+
+    n1->add(r1);
+    n2->add(r1);
+    n2->add(r2);
+    n3->add(r2);
+    n3->add(r3);
+    n4->add(r3);
+    n3->add(r4);
+    n4->add(r4);
+    n4->add(r5);
+    n1->add(r5);
+    n3->add(r6);
+    n4->add(r6);
+    n1->add(r7);
+    n2->add(r7);
+    n1->add(r8);
+    n2->add(r8);
+
+    r1->connect_in(n1);
+    r1->connect_out(n2);
+
+    r2->connect_in(n2);
+    r2->connect_out(n3);
+
+    r3->connect_in(n3);
+    r3->connect_out(n4);
+
+    r4->connect_in(n3);
+    r4->connect_out(n4);
+
+    r5->connect_in(n4);
+    r5->connect_out(n1);
+
+    r6->connect_in(n3);
+    r6->connect_out(n4);
+
+    r7->connect_in(n1);
+    r7->connect_out(n2);
+
+    r8->connect_in(n1);
+    r8->connect_out(n2);
+
+    Current_Solutions<double>* s= new Current_Solutions<double>;
+     cout << s->solve(r1) << endl;
+
+    delete n1;
+    delete n2;
+    delete r1;
+    delete r2;
+    cout << "Hello world!" << endl;
+    return 0;
 }*/
-
-
