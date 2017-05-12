@@ -44,16 +44,16 @@ Console::~Console(){
 void Console::parse(const char* instruction){
     unsigned int length, arg_c = 0, n = 0;
     char* instr;
-    char* args_char;
-    short* args_short;
-    int* args_int;
-    long int* args_long;
-    unsigned char* args_uchar;
-    unsigned short* args_ushort;
-    unsigned int* args_uint;
-    unsigned long int* args_ulong;
-    float* args_float;
-    double* args_double;
+    char* args_char = nullptr;
+    short* args_short = nullptr;
+    int* args_int = nullptr;
+    long int* args_long = nullptr;
+    unsigned char* args_uchar = nullptr;
+    unsigned short* args_ushort = nullptr;
+    unsigned int* args_uint = nullptr;
+    unsigned long int* args_ulong = nullptr;
+    float* args_float = nullptr;
+    double* args_double = nullptr;
 
     unsigned int args_char_count = 0;
     unsigned int args_short_count = 0;

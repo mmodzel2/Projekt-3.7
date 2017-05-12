@@ -181,6 +181,7 @@ template <class type>
 
             delete[] mn;
             delete[] mm;
+            delete[] minor;
 
             return str;
         }

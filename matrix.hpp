@@ -592,10 +592,10 @@ template <class type>
 template <class type>
     char** Matrix<type>::get_minor(char* n, char* m, unsigned long matrix_ranks) const{
         unsigned long k = 0, l = 0;
-        char** ret;
+        char** ret = nullptr;
         char** temp;
 
-        if (coefficients_ == nullptr) return nullptr;
+        if (coefficients_ == nullptr) return ret;
 
         if (n == nullptr){ //create object for function - blocks will be used for selecting rows and columns in matrix that won't be used in finding minor
             n = new char[rows_];
