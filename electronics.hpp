@@ -2,7 +2,7 @@
 * Name: electronics.hpp
 * Purpose: Solving problems with electronics
 * @author mmodzel2
-* @version 0.96 13-05-2017
+* @version 0.97 13-05-2017
 */
 
 #ifndef _ELECTR_HPP
@@ -23,10 +23,10 @@ template <class type>
     class EVariable{
         public:
             type con; //constant
-            std::string v;
+            std::string v; //string name of current or voltage
 
             EVariable();
-    }; //for use in solving electronics circuits
+    }; //for use in solving electronics circuits - equals con*v
 
 template <class type>
     EVariable<type>::EVariable() : con(0), v(""){
@@ -41,10 +41,10 @@ template <class type>
             Electronics();
             virtual ~Electronics() = 0;
 
-            virtual EVariable<type>* voltage(std::string current, bool out) = 0; //for current use
+            virtual EVariable<type>* voltage(std::string current, bool out) = 0; //for circuit solving use
             virtual EVariable<type>* current(std::string current, bool out) = 0;
 
-            virtual type voltage(type voltage, bool out, int) = 0; //for normal use
+            virtual type voltage(type voltage, bool out, int) = 0; //for normal use - not used in solving
             virtual type current(type voltage, bool out, int) = 0;
 
             void connect_in(Electronics<type>* c);
@@ -301,6 +301,7 @@ template <class type>
 
 template <class type>
     unsigned int Electronics<type>::console_connect(Console* console, void** args){
+        Electronics<type>* e = nullptr;
         if (args[0] == nullptr || args[1] == nullptr || args[2] == nullptr || args[3] == nullptr){
             (console->get_stream()) << "Bad arguments." << std::endl;
             return 1;
@@ -321,18 +322,52 @@ template <class type>
         if (((Electronics<double>*)args[1])->get_type() == 1){ //Node detected
             ((Node<double>*)args[1])->add((Electronics<double>*)args[3]);
         } else {
-            if (c1[0] == 'a' || c1[0] == 'A' || c1[0] == '0')
-               ((Electronics<double>*)args[1])->connect_in((Electronics<double>*)args[3]);
-            else if (c1[0] == 'b' ||c1[0] == 'B' || c1[0] == '1')
+            if (c1[0] == 'a' || c1[0] == 'A' || c1[0] == '0'){
+                e = ((Electronics<double>*)args[1])->get_connect_in();
+                /* Check if there was previously connected element - if yes disconnect it */
+                if (e != nullptr){
+                    if (e->get_connect_in() == ((Electronics<double>*)args[1]))
+                        e->connect_in(nullptr); //disconnect element from previous one
+                    else if (e->get_connect_out() == ((Electronics<double>*)args[1]))
+                        e->connect_out(nullptr); //disconnect element from previous one
+                }
+                ((Electronics<double>*)args[1])->connect_in((Electronics<double>*)args[3]);
+            } else if (c1[0] == 'b' || c1[0] == 'B' || c1[0] == '1'){
+                e = ((Electronics<double>*)args[1])->get_connect_out();
+                /* Check if there was previously connected element - if yes disconnect it */
+                if (e != nullptr){
+                    if (e->get_connect_in() == ((Electronics<double>*)args[1]))
+                        e->connect_in(nullptr); //disconnect element from previous one
+                    else if (e->get_connect_out() == ((Electronics<double>*)args[1]))
+                        e->connect_out(nullptr); //disconnect element from previous one
+                }
                 ((Electronics<double>*)args[1])->connect_out((Electronics<double>*)args[3]);
+            }
         }
         if (((Electronics<double>*)args[3])->get_type() == 1){ //Node detected
-            ((Node<double>*)args[3])->add((Electronics<double>*)args[0]);
+            ((Node<double>*)args[3])->add((Electronics<double>*)args[1]);
         } else {
-            if (c2[0] == 'a' || c2[0] == 'A' || c2[0] == '0')
+            if (c2[0] == 'a' || c2[0] == 'A' || c2[0] == '0'){
+                e = ((Electronics<double>*)args[3])->get_connect_in();
+                /* Check if there was previously connected element - if yes disconnect it */
+                if (e != nullptr){
+                    if (e->get_connect_in() == ((Electronics<double>*)args[3]))
+                        e->connect_in(nullptr); //disconnect element from previous one
+                    else if (e->get_connect_out() == ((Electronics<double>*)args[3]))
+                        e->connect_out(nullptr); //disconnect element from previous one
+                }
                 ((Electronics<double>*)args[3])->connect_in((Electronics<double>*)args[1]);
-            else if (c2[0] == 'b' ||c2[0] == 'B' || c2[0] == '1')
+            } else if (c2[0] == 'b' || c2[0] == 'B' || c2[0] == '1'){
+                e = ((Electronics<double>*)args[3])->get_connect_out();
+                /* Check if there was previously connected element - if yes disconnect it */
+                if (e != nullptr){
+                    if (e->get_connect_in() == ((Electronics<double>*)args[3]))
+                        e->connect_in(nullptr); //disconnect element from previous one
+                    else if (e->get_connect_out() == ((Electronics<double>*)args[3]))
+                        e->connect_out(nullptr); //disconnect element from previous one
+                }
                 ((Electronics<double>*)args[3])->connect_out((Electronics<double>*)args[1]);
+            }
         }
 
         (console->get_stream()) << "Element connected." << std::endl;
@@ -342,7 +377,7 @@ template <class type>
 
 template <class type>
     unsigned int Electronics<type>::console_disconnect(Console* console, void** args){
-        Electronics* e;
+        Electronics* e = nullptr;
         if (args[0] == nullptr || args[1] == nullptr){
             (console->get_stream()) << "Bad arguments." << std::endl;
             return 1;
@@ -545,7 +580,7 @@ template <class type>
 template <class type>
     EVariable<type>* Resistor<type>::voltage(std::string current, bool out){
         EVariable<type>* v = new EVariable<type>;
-        v->con = type(-1)*r_;
+        v->con = r_;
         v->v = current;
         return v;
     }
@@ -768,7 +803,7 @@ template <class type>
 template <class type>
     EVariable<type>* Current_source<type>::current(std::string current, bool out){
         EVariable<type>* v = new EVariable<type>;
-        if (out == 0) v->con = j_;
+        if (out == 1) v->con = j_;
         else v->con = -1*j_;
         v->v = "1";
         //v->con = 1;
@@ -783,7 +818,7 @@ template <class type>
 
 template <class type>
     type Current_source<type>::current(type voltage, bool out, int){
-        if (out == 0) return j_;
+        if (out == 1) return j_;
         else return -1*j_;
     }
 
@@ -845,7 +880,7 @@ template <class type>
 template <class type>
     EVariable<type>* Current_disource<type>::current(std::string current, bool out){
         EVariable<type>* v = new EVariable<type>;
-        if (out == 0) v->con = type(l_);
+        if (out == 1) v->con = type(l_);
         else v->con = type(-l_);
         v->v = current_;
         //v->con = 1;
@@ -926,7 +961,7 @@ template <class type>
 template <class type>
     EVariable<type>* Current_dusource<type>::current(std::string current, bool out){
         EVariable<type>* v = new EVariable<type>;
-        if (out == 0) v->con = type(b_);
+        if (out == 1) v->con = type(b_);
         else v->con = type(-b_);
         v->v = voltage_;
         //v->con = 1;
@@ -1259,11 +1294,11 @@ template <class type>
         }
 
        if (en == e) { //Nodes were not created
-            cout << "Nodes weren't created" << endl;
+            //cout << "Nodes weren't created" << endl;
             solution = new std::stringstream();
             /* Count elements in circuit */
 
-            cout << "Count: " << n << endl;
+            //cout << "Count: " << n << endl;
 
             /* We need to create nodes between elements to solve circuit */
             nodes = new Node<type>* [n];
@@ -1327,7 +1362,7 @@ template <class type>
             delete solution;
        } else {
            n = 0;
-           cout << "Nodes created" << endl;
+           //cout << "Nodes created" << endl;
             if (en == nullptr){
                 en = e;
                 while(1){
@@ -1339,9 +1374,9 @@ template <class type>
 
             if (en == nullptr) return 1; //current without connections
 
-            cout << "Start node: " << (static_cast<Node<type>*>(en))->get_node() << endl;
+            //cout << "Start node: " << (static_cast<Node<type>*>(en))->get_node() << endl;
             connection_list = get_connections(static_cast<Node<type>*>(en), nullptr, interconnection_list, n);
-            cout << "Connections count: " << n << endl;
+            //cout << "Connections count: " << n << endl;
 
             if (connections_ != nullptr) delete[] connections_;
             connections_ = new std::string[n];
@@ -1350,14 +1385,12 @@ template <class type>
             /* Create names of connections. Build of name:
                "One node"."Second node" */
             for (unsigned int i = 0; i < n; i++){
-                cout << connection_list[i*2]->get_node() << " - " << connection_list[i*2+1]->get_node() << endl;
+                //cout << connection_list[i*2]->get_node() << " - " << connection_list[i*2+1]->get_node() << endl;
                 connections_[i] = connection_list[i*2]->get_node()+"."+connection_list[i*2+1]->get_node();
             }
 
             /* Find nodes in circuit - they will be needed to set currents in connections */
             nodes = new Node<type>* [n];
-
-            //for (unsigned int i = 0; i < n; i++) nodes[i] = nullptr;
 
             for (unsigned int i = 0; i < n; i++){
                 flag = 0;
@@ -1369,6 +1402,7 @@ template <class type>
                 if (flag == 0)
                     nodes[nodes_count++] = connection_list[i*2];
 
+                flag = 0;
                 for (unsigned int j = 0; j < nodes_count; j++)
                     if (nodes[j] == connection_list[i*2+1]){
                         flag = 1;
@@ -1378,9 +1412,9 @@ template <class type>
                     nodes[nodes_count++] = connection_list[i*2+1];
             }
 
-            cout << "Nodes count: " << nodes_count << endl;
-
-            for (unsigned int i = 0; i < nodes_count; i++) cout << nodes[i]->get_node() << endl;
+            /* For test purpose */
+            /*cout << "Nodes count: " << nodes_count << endl;
+            for (unsigned int i = 0; i < nodes_count; i++) cout << nodes[i]->get_node() << endl;*/
 
             /* Prepare matrix for currents to get currents formulas */
 
@@ -1413,12 +1447,11 @@ template <class type>
             }
 
             /* Show matrix - for test purpose */
-            for (unsigned int i = 0; i < I->get_rows(); i++){
+            /*for (unsigned int i = 0; i < I->get_rows(); i++){
                 for (unsigned int j = 0; j < I->get_columns(); j++)
                     cout << I->get(i,j) << " ";
                 cout << endl;
             }
-
             cout << "----------" << endl;
 
             for (unsigned int i = 0; i < IB->get_rows(); i++){
@@ -1426,29 +1459,24 @@ template <class type>
                     cout << IB->get(i,j) << " ";
                 cout << endl;
             }
-
-            /*I->set(0,0,0);
-            IB->set(0,0,2);
-            I->set(1,0,0);
-            IB->set(1,0,-2);
-
-            for (unsigned int i = 0; i < I->get_rows(); i++){
-                for (unsigned int j = 0; j < I->get_columns(); j++)
-                    cout << I->get(i,j) << " ";
-                cout << endl;
-            }*/
-
-
+            cout << "----------" << endl;*/
 
             /* Prepare next part of matrix for voltages to get voltages formulas */
             /* We need to find loops in network */
             connection_loops = get_loops(connection_list,n,nullptr,0,0);
             if (connection_loops == nullptr) {
-                    cout << "Loop not found" << endl;
-                    return 1;
+                /* Loop has not been found */
+                currents_ = nullptr;
+                voltages_ = nullptr;
+                connections_ = nullptr;
+                connections_count_ = 0;
+                delete &n;
+
+                return 1;
             }
 
-            for (unsigned int i = 0; i < n; i++){
+            /* For test purpose - show loops */
+            /*for (unsigned int i = 0; i < n; i++){
                 if (connection_loops[i*(n+1)] != nullptr){
                     for (unsigned int j = 0; j < n+1; j++){
                          if (connection_loops[i*(n+1)+j] == nullptr) break;
@@ -1456,7 +1484,7 @@ template <class type>
                     }
                     cout << endl;
                 }
-            }
+            }*/
 
             /* Check connections by looking through loops if there is a connection without loop set current in this connection to zero */
             for (unsigned int i = 0; i < n*2; i++){
@@ -1528,7 +1556,7 @@ template <class type>
 
                                         IB->set(IB->get_rows()-1,0,IB->get(IB->get_rows()-2,0));
 
-                                        cout << connection_list[i*2]->get_node() << "->" << connection_list[i*2+1]->get_node() << endl;
+                                        //cout << connection_list[i*2]->get_node() << "->" << connection_list[i*2+1]->get_node() << endl;
                                         ret = get_connection_voltage(connection_list, interconnection_list, i, n, I, IB, I->get_rows()-2, type(-1));
                                         break;
                                     }
@@ -1571,7 +1599,7 @@ template <class type>
 
                             for (unsigned int i = 0; i < n; i++){ //find connection
                                 if (connection_list[i*2] == connection_loops[m*(n+1)+j] && connection_list[i*2+1] == connection_loops[m*(n+1)+j+1]){ //good direction
-                                    cout << connection_list[i*2]->get_node() << "->" << connection_list[i*2+1]->get_node() << endl;
+                                    //cout << connection_list[i*2]->get_node() << "->" << connection_list[i*2+1]->get_node() << endl;
                                     ret = get_connection_voltage(connection_list, interconnection_list, i, n, I, IB, I->get_rows()-1, type(1));
                                     break;
                                 }
@@ -1591,7 +1619,7 @@ template <class type>
             }
 
             /* Show matrix - for test purpose */
-            for (unsigned int i = 0; i < I->get_rows(); i++){
+            /*for (unsigned int i = 0; i < I->get_rows(); i++){
                 for (unsigned int j = 0; j < I->get_columns(); j++)
                     cout << I->get(i,j) << " ";
                 cout << endl;
@@ -1605,20 +1633,16 @@ template <class type>
                 cout << endl;
             }
 
+            cout << "----------" << endl;*/
+
             /* Now solve equations */
-
-            cout << "Solving..." << endl;
-
             solution = equation<type>(*I, *IB);
-            if (solution == nullptr) cout << "No solution..." << endl;
-            else {
+            if (solution != nullptr){
+                /* Save solutions */
                 currents_ = new type[n];
                 voltages_ = new type[n];
-                for (unsigned int i = 0; i < n; i++){
-                    //cout << "I" << connection_list[i*2]->get_node() << "." << connection_list[(i*2)+1]->get_node() << " = " << solution[i].str() << endl;
-                    cout << solution[i].str() << endl;
+                for (unsigned int i = 0; i < n; i++)
                     solution[i] >> currents_[i];
-                }
 
                 delete[] solution;
                 /* Get Voltages for solutions */
@@ -1638,12 +1662,12 @@ template <class type>
                         voltages_[i] = type(0);
                     }
                 }
-                cout << "Voltages: " << endl;
-                for (unsigned int i = 0; i < n; i++){
-                    //cout << "U" << connection_list[i*2]->get_node() << "." << connection_list[(i*2)+1]->get_node() << " = " << Voltages_[i] << endl;
-                    cout << voltages_[i] << endl;
-                }
-                }
+            } else {
+                currents_ = nullptr;
+                voltages_ = nullptr;
+                connections_ = nullptr;
+                connections_count_ = 0;
+            }
             delete[] connection_list;
             delete[] interconnection_list;
             delete[] connection_loops;
@@ -1672,61 +1696,57 @@ template <class type>
             for (i = 0; i < n; i++)
                 if (connections_list[i*2] == snode) return connections_list; //node was processed
 
-        cout << "Working on: " << snode->get_node() << " - " << snode->get_connection_count() << endl;
+        //cout << "Working on: " << snode->get_node() << " - " << snode->get_connection_count() << endl;
 
         if (interconnections_list == nullptr) interconnections_list = new Electronics<type>* [50] {nullptr};
 
         for (i = 0; i < snode->get_connection_count(); i++){
-            cout << "Element: " << i << endl;
             e = snode->get(i); //current element in connection
             pe = snode; //previous element in connection
             interconnections_list[n] = e; //add element between nodes to easier find all elements in connection - optimization purpose
             while(1){
-                /* Check each side of connection in element */
-                in = e->get_connect_in();
-                out = e->get_connect_out();
-                if (in == nullptr || out == nullptr) break; //connection is not ended
-                cout << "Work: " << endl;
-                if (in == pe) { //in is connected with previous element in connection
-                    cout << "IN is previous" << endl;
-                    if (out->get_type() != 1){
-                        pe = e; //move forward
-                        e = out;
-                        continue;
-                    }
-                } else if (out == pe) { //out is connected with previous element in connection
-                    cout << "OUT is previous" << endl;
-                    if (in->get_type() != 1){
-                        pe = e; //move forward
-                        e = in;
-                        continue;
-                    }
-                    out = in; //optimization purpose - it does not matter which side of element is node connected
-                } else {
-                    cout << "Something goes wrong. :/" << endl; //for test purpose
-                    break;
+                if (e->get_type() == 1) //if node is connected to node without elements between skip finding node
+                    out = e;
+                else {
+                    /* Check each side of connection in element */
+                    in = e->get_connect_in();
+                    out = e->get_connect_out();
+                    if (in == nullptr || out == nullptr) break; //connection is not ended
+
+                    if (in == pe) { //in is connected with previous element in connection
+                        if (out->get_type() != 1){
+                            pe = e; //move forward
+                            e = out;
+                            continue;
+                        }
+                    } else if (out == pe) { //out is connected with previous element in connection
+                        if (in->get_type() != 1){
+                            pe = e; //move forward
+                            e = in;
+                            continue;
+                        }
+                        out = in; //optimization purpose - it does not matter which side of element is node connected
+                    } else break;
                 }
 
                 ne = static_cast<Node<type>*>(out);
-                cout << "Node detected: " << ne->get_node() << "; (size of connections: " << n << ")" << endl;
+                //cout << "Node detected: " << ne->get_node() << "; (size of connections: " << n << ")" << endl;
                 if (connections_list == nullptr) connections_list = new Node<type>* [100] {nullptr};
                 else {
                     flag = 0;
                     for (j = 0; j < n*2; j+=2){
                         if (connections_list[j] == ne && connections_list[j+1] == snode){
-                            cout << "Connection exists" << endl;
+                            //cout << "Connection exists" << endl;
                             flag = 1;
                             break;
                         }
-                        cout << j << endl;
-                        cout << "T: " << connections_list[j]->get_node() << " - " << connections_list[j+1]->get_node() << endl;
                     }
                     if (flag) break; //connection exists
                 }
 
                 connections_list[n*2] = snode; //add connection
                 connections_list[(n*2)+1] = ne;
-                cout << "Connection: " << snode->get_node() << " - " << ne->get_node() << endl;
+                //cout << "Connection: " << snode->get_node() << " - " << ne->get_node() << endl;
                 n++;
 
                 if (n%50 == 0){ //no more space for connections - expand it
@@ -1751,7 +1771,7 @@ template <class type>
                 break;
             }
         }
-        cout << "End working: " << snode->get_node() << endl;
+        //cout << "End working: " << snode->get_node() << endl;
         return connections_list;
     }
 
@@ -1794,9 +1814,11 @@ template <class type>
         for(unsigned int j = 0; j < n*2; j+=2){
             if (connections_list[j] == loops[k*(n+1)+l]){
                 if (flag == 0){ //add node to existing loop
+                    if (loops[k*(n+1)+2] == nullptr && loops[k*(n+1)] == connections_list[j+1]) continue; //skip reverse direction from check below
                     flag = 1;
                     loops[k*(n+1)+l+1] = connections_list[j+1];
                 } else if (flag == 1) {
+                    if (loops[k*(n+1)+2] == nullptr && loops[k*(n+1)] == connections_list[j+1]) continue; //skip reverse direction from check below
                     for (unsigned int i = 0; i < n; i++)
                         if (loops[i*(n+1)] == nullptr){
                             memflag[i] = 1; //set block
@@ -1807,6 +1829,25 @@ template <class type>
                             loops[i*(n+1)+l+1] = connections_list[j+1]; //add node to created loop
                             break;
                         }
+                }
+            }
+            if (flag2 == 1){ //check reverse direction only for first node in loop
+                if (connections_list[j+1] == loops[k*(n+1)+l]){
+                    if (flag == 0){ //add node to existing loop
+                        flag = 1;
+                        loops[k*(n+1)+l+1] = connections_list[j];
+                    } else if (flag == 1) {
+                        for (unsigned int i = 0; i < n; i++)
+                            if (loops[i*(n+1)] == nullptr){
+                                memflag[i] = 1; //set block
+
+                                for (unsigned int m = 0; m <= l; m++)
+                                    loops[(i*(n+1))+m] = loops[(k*(n+1))+m]; //copy previous nodes in loop
+
+                                loops[i*(n+1)+l+1] = connections_list[j]; //add node to created loop
+                                break;
+                            }
+                    }
                 }
             }
         }
@@ -1861,14 +1902,6 @@ template <class type>
                     if (flag == 0) //loop is not cut
                          get_loops(connections_list, n, loops, j, l+1); //work on next or existing loop
 
-                } else {
-                    cout << "Loop closed. (" << j << "," << l << ")";
-                    cout << loops[j*(n+1)+l+1]->get_node() << endl;
-                    for (unsigned int p = 0; p < n+1; p++){
-                            if (loops[j*(n+1)+p] == nullptr) continue; //loop not found
-                            cout << "->" << loops[j*(n+1)+p]->get_node();
-                    }
-                    cout << endl;
                 }
             }
         }
@@ -1983,7 +2016,7 @@ template <class type>
             } else var = ie->voltage(isstr.str(), 0);
 
             if (var->v == "0"){ //voltage not known
-                    cout << "Current source detected." << endl;
+                    //Current source detected
                     //zero equation that it was not made
                     for (unsigned int m = 0; m < I->get_columns(); m++)
                         I->set(mrow,m,type(0));
@@ -1991,7 +2024,7 @@ template <class type>
                     IB->set(mrow,0,type(0));
                     return 1; //end finding voltage it is not known - probably current source
             } else if (var->v == "1"){ //voltage independent source detected
-                    cout << "Independent voltage source detected." << endl;
+                    //Independent voltage source detected.
                     //add equation to matrix
                     IB->set(mrow,0,(IB->get(mrow,0)+(var->con*type(-dir))));
             } else if (var->v[0] == 'I'){ //voltage depends from current
@@ -2083,9 +2116,9 @@ template <class type>
                 ie = ie->get_connect_out(); //go to next element
             }
             if (var1 != nullptr){ //found current source
-                cout << "Current source detected." << endl;
+                //Current source detected.
                 if (var1->v == "1"){ //current is not depended from another current - probably independent source
-                    cout << "Independent current source detected." << endl;
+                    //Independent current source detected.
                     //add equation to matrix
                     I->expand(I->get_rows()+1, I->get_columns());
                     IB->expand(IB->get_rows()+1, 1);
@@ -2133,7 +2166,7 @@ template <class type>
                             I->expand(I->get_rows()+1, I->get_columns());
                             IB->expand(IB->get_rows()+1, 1);
                             I->set(I->get_rows()-1,i,type(1));
-                            get_connection_voltage(connections_list, interconnections_list, m, n, I, IB, I->get_rows()-1, type(-1)*var1->con); //get information about voltage
+                            get_connection_voltage(connections_list, interconnections_list, m, n, I, IB, I->get_rows()-1, var1->con); //get information about voltage
                             break;
                         }
 
@@ -2145,7 +2178,7 @@ template <class type>
                             I->expand(I->get_rows()+1, I->get_columns());
                             IB->expand(IB->get_rows()+1, 1);
                             I->set(I->get_rows()-1,i,type(1));
-                            get_connection_voltage(connections_list, interconnections_list, m, n, I, IB, I->get_rows()-1, var1->con); //get information about voltage
+                            get_connection_voltage(connections_list, interconnections_list, m, n, I, IB, I->get_rows()-1, type(-1)*var1->con); //get information about voltage
                             break;
                         }
                     }
