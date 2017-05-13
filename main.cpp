@@ -34,12 +34,14 @@ int main()
     console->register_instruction(Node<double>::create, "cn", 1, 8);
 
     console->register_instruction(Electronics<double>::console_connect, "connect", 4, 8, 11, 8, 11);
+    console->register_instruction(Electronics<double>::console_disconnect, "disconnect", 2, 8, 11);
     console->register_instruction(Current_Solutions<double>::console_solve, "solve",1,11);
 
     console->parse("cvs e 30");
     console->parse("cr r1 10");
     console->parse("cr r2 10");
     console->parse("cr r3 10");
+    console->parse("cdivs r4 10 In1.n4");
     console->parse("cn n1");
     console->parse("cn n2");
     console->parse("cn n3");
@@ -52,8 +54,10 @@ int main()
     console->parse("connect 0 n3 1 r2");
     console->parse("connect 0 n3 0 r3");
     console->parse("connect 0 n4 1 r3");
+    console->parse("connect 0 n3 0 r4");
+    console->parse("connect 0 n4 1 r4");
 
-    console->parse("cvs e4 30");
+    /*console->parse("cvs e4 30");
     console->parse("cr r4 30");
     console->parse("cn n5");
     console->parse("cn n6");
@@ -61,6 +65,13 @@ int main()
     console->parse("connect 0 n6 1 e4");
     console->parse("connect 0 n6 0 r4");
     console->parse("connect 0 n5 1 r4");
+
+    console->parse("cvs e 30");
+    console->parse("cr r1 20");
+    console->parse("cr r2 40");
+    console->parse("connect 0 e 0 r1");
+    console->parse("connect 1 r1 0 r2");
+    console->parse("connect 1 e 1 r2");*/
 
     cout << "Write an instruction:" << endl;
     while(1){
@@ -292,3 +303,4 @@ int main()
     cout << "Hello world!" << endl;
     return 0;
 }*/
+
