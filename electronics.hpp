@@ -2,7 +2,7 @@
 * Name: electronics.hpp
 * Purpose: Solving problems with electronics
 * @author mmodzel2
-* @version 0.95 12-05-2017
+* @version 0.96 13-05-2017
 */
 
 #ifndef _ELECTR_HPP
@@ -358,28 +358,36 @@ template <class type>
         if (((Electronics<double>*)args[1])->get_type() == 1){ //Node detected
                 for (unsigned int i = 0; i < ((Node<double>*)args[1])->get_connection_count(); i++){
                     e = ((Node<double>*)args[1])->get(i);
-                    if (e->get_connect_in() == (Electronics<double>*)args[1])
+                    if (e->get_connect_in() == ((Electronics<double>*)args[1]))
                         e->connect_in(nullptr); //disconnect element from node
-                    if (e->get_connect_out() == (Electronics<double>*)args[1])
+                    if (e->get_connect_out() == ((Electronics<double>*)args[1]))
                         e->connect_out(nullptr); //disconnect element from node
                 }
         } else {
             if (c1[0] == 'a' || c1[0] == 'A' || c1[0] == '0')
                e = ((Electronics<double>*)args[1])->get_connect_in();
                if (e != nullptr){
-                    if (e->get_connect_in() == (Electronics<double>*)args[1])
-                        e->connect_in(nullptr); //disconnect element that is connected to disconnecting element
-                    if (e->get_connect_out() == (Electronics<double>*)args[1])
-                        e->connect_out(nullptr); //disconnect element that is connected to disconnecting element
-                    ((Electronics<double>*)args[1])->connect_in(nullptr); //disconnect element
+                    if (e->get_type() == 1){
+                        ((Node<double>*)e)->remove((Electronics<double>*)args[1]);
+                    } else {
+                        if (e->get_connect_in() == ((Electronics<double>*)args[1]))
+                            e->connect_in(nullptr); //disconnect element that is connected to disconnecting element
+                        if (e->get_connect_out() == ((Electronics<double>*)args[1]))
+                            e->connect_out(nullptr); //disconnect element that is connected to disconnecting element
+                        ((Electronics<double>*)args[1])->connect_in(nullptr); //disconnect element
+                    }
                }
             else if (c1[0] == 'b' ||c1[0] == 'B' || c1[0] == '1')
                e = ((Electronics<double>*)args[1])->get_connect_out();
                if (e != nullptr){
-                    if (e->get_connect_in() == (Electronics<double>*)args[1])
-                        e->connect_in(nullptr); //disconnect element that is connected to disconnecting element
-                    if (e->get_connect_out() == (Electronics<double>*)args[1])
-                        e->connect_out(nullptr); //disconnect element that is connected to disconnecting element
+                    if (e->get_type() == 1){
+                        ((Node<double>*)e)->remove((Electronics<double>*)args[1]);
+                    } else {
+                        if (e->get_connect_in() == ((Electronics<double>*)args[1]))
+                            e->connect_in(nullptr); //disconnect element that is connected to disconnecting element
+                        if (e->get_connect_out() == ((Electronics<double>*)args[1]))
+                            e->connect_out(nullptr); //disconnect element that is connected to disconnecting element
+                    }
                     ((Electronics<double>*)args[1])->connect_out(nullptr); //disconnect element
                }
         }
@@ -1694,7 +1702,10 @@ template <class type>
                         continue;
                     }
                     out = in; //optimization purpose - it does not matter which side of element is node connected
-                } else cout << "Something goes wrong. :/" << endl; //for test purpose
+                } else {
+                    cout << "Something goes wrong. :/" << endl; //for test purpose
+                    break;
+                }
 
                 ne = static_cast<Node<type>*>(out);
                 cout << "Node detected: " << ne->get_node() << "; (size of connections: " << n << ")" << endl;
@@ -1930,7 +1941,7 @@ template <class type>
 
             /* Delete repeating loops once more - after finding connection doubling loops there can be repeating loops on the list */
             for (unsigned int i = 0; i < n; i++){
-                if (loops[i*(n+1)] != nullptr)
+                if (loops[i*(n+1)] != nullptr){
                     for (unsigned int j = i+1; j < n; j++){
                         if (loops[j*(n+1)] != nullptr){
                             flag = 0;
@@ -1942,6 +1953,9 @@ template <class type>
                             if (flag == 0) for (unsigned int p = 0; p < n+1; p++) loops[j*(n+1)+p] = nullptr;
                         }
                     }
+                    //check if loop is too short - that means loop has not been created
+                    if (loops[i*(n+1)+2] == nullptr) for (unsigned int p = 0; p < 2; p++) loops[i*(n+1)+p] = nullptr;
+                }
             }
         }
 
@@ -2144,8 +2158,8 @@ template <class type>
 template <class type>
     void Current_Solutions<type>::get_solutions(Console* console){
         (console->get_stream()) << "Currents:" << std::endl;
-        if (connections_count_ == 0){
-            (console->get_stream()) << "No solution" << std::endl;
+        if (connections_count_ == 0 || currents_ == nullptr){
+            (console->get_stream()) << "No solution." << std::endl;
         } else {
             for (unsigned int i = 0; i < connections_count_; i++){
                 (console->get_stream()) << "I" << connections_[i] << " = " << currents_[i] << std::endl;
