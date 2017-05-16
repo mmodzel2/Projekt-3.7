@@ -2,7 +2,7 @@
 * Name: equation.cpp
 * Purpose: Matrix and solving equations
 * @author mmodzel2
-* @version 1.2 1-05-2017
+* @version 1.2 14-05-2017
 */
 
 #ifndef _EQUATION_HPP
@@ -32,11 +32,11 @@ template <class type>
         char* mn;
         char* mm;
 
-        if (A.get_rows() > A.get_columns()) {
+        /*if (A.get_rows() > A.get_columns()) {
                 A.expand(A.get_rows(),A.get_rows());
                 //B.expand(A.get_rows(),1);
                 return equation<type>(A,B);
-        }
+        }*/
 
         Matrix<type> *AB = new Matrix<type> (A);
 
@@ -45,9 +45,7 @@ template <class type>
         for (unsigned long i = 0; i < A.get_rows(); i++)
             AB->set(i, A.get_columns(), B.get(i,0));
 
-        std::cout << "RankAB..." << std::endl;
         rank_AB = AB->rank(); //calculate rank of expanded matrix
-        std::cout << "rank_AB: " << rank_AB << std::endl;
 
         if (rank_AB == 0){ //matrix with zero coefficients
             str = new std::stringstream[B.get_rows()];
@@ -76,10 +74,7 @@ template <class type>
             return nullptr;
         }
 
-        std::cout << "RankA..." << rank_A << std::endl;
-        std::cout << "Minor..." << std::endl;
         minor = A.get_minor(mn,mm,rank_A); //get minor in which solutions are independent
-        std::cout << "Minor found..." << std::endl;
 
         if (minor != nullptr){
             for (i = 0; i < A.get_rows(); i++)
@@ -98,22 +93,12 @@ template <class type>
                 }
             }
 
-            std::cout << "Inverse..." << std::endl;
             Matrix<type> *inv = m->inverse(); //inverse independent solution
             assert (inv != nullptr);
-
-                /* Show matrix - for test purpose */
-                for (unsigned int i = 0; i < inv->get_rows(); i++){
-                    for (unsigned int j = 0; j < inv->get_columns(); j++)
-                        std::cout << inv->get(i,j) << " ";
-                    std::cout << std::endl;
-                }
 
             delete m;
 
             k = A.get_columns() - k;
-
-            std::cout << "Calculating..." << std::endl;
 
             s = new type [l*(k+1)];
             x = new type [l*(k+1)];
@@ -188,12 +173,5 @@ template <class type>
 
         return nullptr;
     }
-
-Matrix<double> equation_independent(Matrix<double> A, Matrix<double> B);
-std::stringstream* equation(Matrix<double> A, Matrix<double> B);
-
-unsigned int matrix_equation(Console* console, void** args);
-
-
 
 #endif // _EQUATION_HPP

@@ -2,7 +2,7 @@
 * Name: electronics.hpp
 * Purpose: Solving problems with electronics
 * @author mmodzel2
-* @version 0.97 13-05-2017
+* @version 0.98 14-05-2017
 */
 
 #ifndef _ELECTR_HPP
@@ -26,7 +26,7 @@ template <class type>
             std::string v; //string name of current or voltage
 
             EVariable();
-    }; //for use in solving electronics circuits - equals con*v
+    }; //for use in solving electronics circuits - equals con*v; 0*0 means voltage or current not known; con*1 - independent source
 
 template <class type>
     EVariable<type>::EVariable() : con(0), v(""){
@@ -795,8 +795,6 @@ template <class type>
         EVariable<type>* v = new EVariable<type>;
         v->con = 0;
         v->v = "0"; //voltage is not known
-        //v->con = j_;
-        //v->v = "1";
         return v;
     }
 
@@ -806,8 +804,6 @@ template <class type>
         if (out == 1) v->con = j_;
         else v->con = -1*j_;
         v->v = "1";
-        //v->con = 1;
-        //v->v = current;
         return v;
     }
 
@@ -872,8 +868,6 @@ template <class type>
         EVariable<type>* v = new EVariable<type>;
         v->con = 0;
         v->v = "0"; //voltage is not known
-        //v->con = j_;
-        //v->v = "1";
         return v;
     }
 
@@ -883,8 +877,6 @@ template <class type>
         if (out == 1) v->con = type(l_);
         else v->con = type(-l_);
         v->v = current_;
-        //v->con = 1;
-        //v->v = current;
         return v;
     }
 
@@ -953,8 +945,6 @@ template <class type>
         EVariable<type>* v = new EVariable<type>;
         v->con = 0;
         v->v = "0"; //voltage is not known
-        //v->con = j_;
-        //v->v = "1";
         return v;
     }
 
@@ -964,8 +954,6 @@ template <class type>
         if (out == 1) v->con = type(b_);
         else v->con = type(-b_);
         v->v = voltage_;
-        //v->con = 1;
-        //v->v = current;
         return v;
     }
 
@@ -2190,10 +2178,10 @@ template <class type>
 
 template <class type>
     void Current_Solutions<type>::get_solutions(Console* console){
-        (console->get_stream()) << "Currents:" << std::endl;
         if (connections_count_ == 0 || currents_ == nullptr){
             (console->get_stream()) << "No solution." << std::endl;
         } else {
+            (console->get_stream()) << "Currents:" << std::endl;
             for (unsigned int i = 0; i < connections_count_; i++){
                 (console->get_stream()) << "I" << connections_[i] << " = " << currents_[i] << std::endl;
             }

@@ -2,7 +2,7 @@
 * Name: matrix.hpp
 * Purpose: Matrix and solving equations
 * @author mmodzel2
-* @version 1.2 1-05-2017
+* @version 1.2 14-05-2017
 */
 
 #ifndef _MATRIX_HPP
@@ -301,7 +301,7 @@ template <class type>
             flag2 = 1;
             }
 
-        if (rows_ == columns_)
+        if (rows_ == columns_){
             for (unsigned long i = 0; i < rows_; i++){ //get first coefficients
                 if (n[i] == 0){
                     if (j < 3) k[j][0] = i;
@@ -312,8 +312,7 @@ template <class type>
                     g++;
                 }
             }
-
-        else {
+        } else {
             for (unsigned long i = 0; i < rows_; i++){ //get first coefficients
                 if (n[i] == 0){
                     if (j < 3) k[j][0] = i;
@@ -404,7 +403,6 @@ template <class type>
         if (rows_ != columns_ || rows_ == 0) return nullptr;
 
         div = this->det();
-        std::cout << "Det: " << div << std::endl;
         if (div == type(0)) return nullptr; //inverse matrix does not exist
 
         if (rows_ == 1){
@@ -425,7 +423,7 @@ template <class type>
             n[i] = 1;
             for (unsigned long j = 0; j < columns_; j++){
                 m[j] = 1;
-                //count minor
+                //count determination of minor
                 if ((i+j)%2 == 1) determination = type(-1)*this->det(n,m);
                 else determination = this->det(n,m);
                 matrix->set(j,i, determination/div); //set transposed value in invered matrix
@@ -499,15 +497,6 @@ template <class type>
         unsigned long ranks = 0, temp_ranks;
 
         if (coefficients_ == nullptr) return 0;
-/*        if (rows_ != columns_){ //expand matrix to work with det function
-                Matrix<type> *e = new Matrix<type> (*this);
-                if (rows_ > columns_) e->expand(rows_,rows_);
-                else e->expand(columns_,columns_);
-
-                ranks = e->rank();
-                delete e;
-                return ranks;
-        }*/ //temporary deleted
 
         if (n == nullptr){ //create object for function - blocks will be used for selecting rows and columns in matrix that won't be used in calculation
             n = new char[rows_];
@@ -526,6 +515,7 @@ template <class type>
         if (rows_ != columns_){ //check if matrix is not nxn
             for (unsigned long i = 0; i < columns_; i++)
                 if (m[i] == 1) l++; //calculate deleted columns
+
             if (rows_-k != columns_-l){ //matrix has to be divided
                 if (rows_ > columns_){
                     for (unsigned long i = 0; i < rows_; i++) //choose row to remove

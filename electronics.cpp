@@ -2,36 +2,7 @@
 
 #include "electronics.hpp"
 
-unsigned int create_resistance(Console* console, void** args){
-    Resistor<double>* r;
 
-    if (args[0] == nullptr){
-        (console->get_stream()) << "Error while creating resistant element." << std::endl;
-        return 1;
-    }
-
-    try {
-        r = new Resistor<double>(*((double *)args[1]));
-    } catch(std::bad_alloc){
-        (console->get_stream()) << "Error while creating resistant element." << std::endl;
-        return 1;
-    }
-
-    unsigned int ret = console->register_variable((const char *)args[0], r);
-    if (ret == 1){
-        delete r;
-        (console->get_stream()) << "Lack of free memory. Resistance element cannot be created." << std::endl;
-        return 2;
-    } else if (ret == 3) {
-        delete r;
-        (console->get_stream()) << "Variable name reserved. Cannot create resistance element with given variable name." << std::endl;
-        return 1;
-    }
-
-    (console->get_stream()) << "Element created." << std::endl;
-
-    return 0;
-}
 
 unsigned int create_capacitity(Console* console, void** args){
     Capacitity<double>* c;
@@ -349,25 +320,31 @@ unsigned int create_node(Console* console, void** args){
     Node<double>* n;
 
     if (args[0] == nullptr){
-        (console->get_stream()) << "Error while creating resistant element." << std::endl;
+        (console->get_stream()) << "Error while creating node element." << std::endl;
+        return 1;
+    }
+
+    std::string name = ((const char *)args[0]);
+    if (name.find(".") != string::npos){
+        (console->get_stream()) << "Error while creating node element. Forbidden name of node." << std::endl;
         return 1;
     }
 
     try {
-        n = new Node<double>();
+        n = new Node<double>(name);
     } catch(std::bad_alloc){
-        (console->get_stream()) << "Error while creating resistant element." << std::endl;
+        (console->get_stream()) << "Error while creating node element." << std::endl;
         return 1;
     }
 
     unsigned int ret = console->register_variable((const char *)args[0], n);
     if (ret == 1){
         delete n;
-        (console->get_stream()) << "Lack of free memory. Resistance element cannot be created." << std::endl;
+        (console->get_stream()) << "Lack of free memory. Node element cannot be created." << std::endl;
         return 2;
     } else if (ret == 3) {
         delete n;
-        (console->get_stream()) << "Variable name reserved. Cannot create resistance element with given variable name." << std::endl;
+        (console->get_stream()) << "Variable name reserved. Cannot create node element with given variable name." << std::endl;
         return 1;
     }
 
@@ -384,6 +361,7 @@ unsigned int solve(Console* console, void** args){
 
     Current_Solutions<double>* c = new Current_Solutions<double>;
     c->solve((Electronics<double>*)args[0]);
+    c->get_solutions(console);
     delete c;
 
     return 0;
