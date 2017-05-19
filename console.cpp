@@ -2,7 +2,7 @@
 * Name: console.cpp
 * Purpose: Console command interface
 * @author mmodzel2
-* @version 1.0 20-04-2017
+* @version 1.1 18-05-2017
 */
 
 #include <cstdarg>
@@ -469,15 +469,13 @@ void Console::remove_variable(void* pointer){
         if (this->variables_[i]->pointer_ == pointer) {
                 delete[] this->variables_[i]->name_;
                 delete this->variables_[i];
-                this->variables_[i] = nullptr;
 
-                this->variables_[i] = nullptr;
                 this->variables_count_--;
 
-                for(unsigned int n = this->variables_count_; n > i; n--){
-                    this->variables_[n-1] = this->variables_[n];
-                    this->variables_[n] = nullptr;
-                }
+                for(unsigned int n = i; n < this->variables_count_; ++n)
+                    this->variables_[n] = this->variables_[n+1];
+
+                this->variables_[this->variables_count_+1] = nullptr;
 
                 break;
         }
@@ -489,15 +487,13 @@ void Console::remove_variable(const char* name){
         if (strcmp(this->variables_[i]->name_, name) == 0) {
                 delete[] this->variables_[i]->name_;
                 delete this->variables_[i];
-                this->variables_[i] = nullptr;
 
-                this->variables_[i] = nullptr;
                 this->variables_count_--;
 
-                for(unsigned int n = this->variables_count_; n > i; n--){
-                    this->variables_[n-1] = this->variables_[n];
-                    this->variables_[n] = nullptr;
-                }
+                for(unsigned int n = i; n < this->variables_count_; ++n)
+                    this->variables_[n] = this->variables_[n+1];
+
+                this->variables_[this->variables_count_+1] = nullptr;
 
                 break;
         }

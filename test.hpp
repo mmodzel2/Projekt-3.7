@@ -1,8 +1,8 @@
 /*
 * Name: test.hpp
-* Purpose: Matrix and solving equations
+* Purpose: Solving problems with electronics
 * @author mmodzel2
-* @version 1.0 20-04-2017
+* @version 1.0 18-05-2017
 */
 
 #ifndef _TEST_HPP
@@ -11,6 +11,7 @@
 #include <assert.h>
 
 #include "matrix.hpp"
+#include "electronics.hpp"
 
 template <class type>
     class Test{
@@ -23,6 +24,8 @@ template <class type>
     unsigned int Test<type>::test_assert(Console* console, void** args){
         Matrix <type> *m = new Matrix <type> (2,2);
         Matrix <type> *m1 = new Matrix <type> (2,2);
+
+        /* Test matrix class */
 
         m->set(0,0,1);
         assert(m->get(0,0) == 1);
@@ -79,40 +82,178 @@ template <class type>
         delete m2;
         delete m3;
 
+        /* Test electronics */
+        Node<double>* n = new Node<double>("0");
+        Resistor<double>* r = new Resistor<double>(10);
+
+        n->add(r);
+        assert(n->get(0) == r);
+        assert(n->get(1) == nullptr);
+        n->remove(r);
+        assert(n->get(0) == nullptr);
+        assert(n->get(1) == nullptr);
+
+        n->add(r);
+        r->connect_in(n);
+        assert(r->get_connect_in() == n);
+
+        Node<double>* n1 = new Node<double>("1");
+        Voltage_source<double>* e = new Voltage_source<double>(10);
+
+        n->add(e);
+
+        n1->add(r);
+        n1->add(e);
+
+        r->connect_out(n1);
+        assert(r->get_connect_out() == n1);
+
+        e->connect_out(n1);
+        assert(e->get_connect_out() == n1);
+
+        e->connect_in(n);
+        assert(r->get_connect_in() == n);
+
+        Current_Solutions<double>* c = new Current_Solutions<double>;
+        c->solve(e);
+
+        r->connect_in(nullptr);
+        assert(r->get_connect_in() == nullptr);
+
+        delete e;
+        delete r;
+        delete n;
+        delete n1;
+
         return 0;
     }
 
 template <class type>
     unsigned int Test<type>::test(Console* console, void** args){
-        (console->get_stream()) << "create testA 4 4 1 2 3 4 3 5 6 9 4 5 3 2 0 0 0 0" << std::endl;
-        console->parse("create testA 4 4 1 2 3 4 3 5 6 9 4 5 3 2 0 0 0 0");
-        (console->get_stream()) << "create testB 4 1 1 2 3 0" << std::endl;
-        console->parse("create testB 4 1 1 2 3 0");
-        (console->get_stream()) << "look testA" << std::endl;
-        console->parse("look testA");
-        (console->get_stream()) << "look testB" << std::endl;
-        console->parse("look testB");
-        (console->get_stream()) << "det testA" << std::endl;
-        console->parse("det testA");
-        (console->get_stream()) << "rank testA" << std::endl;
-        console->parse("rank testA");
-        (console->get_stream()) << "solve testA testB" << std::endl;
-        console->parse("solve testA testB");
+        (console->get_stream()) << "cvs e 4" << std::endl;
+        console->parse("cvs e 4");
+        (console->get_stream()) << "ccs j 3" << std::endl;
+        console->parse("ccs j 3");
+        (console->get_stream()) << "cr r1 1" << std::endl;
+        console->parse("cr r1 1");
+        (console->get_stream()) << "cr r2 2" << std::endl;
+        console->parse("cr r2 2");
+        (console->get_stream()) << "cr r3 3" << std::endl;
+        console->parse("cr r3 3");
+        (console->get_stream()) << "cr r4 4" << std::endl;
+        console->parse("cr r4 4");
+        (console->get_stream()) << "cr r5 5" << std::endl;
+        console->parse("cr r5 5");
+        (console->get_stream()) << "cducs g 0.3 U3.2" << std::endl;
+        console->parse("cducs g 0.3 U3.2");
 
-        (console->get_stream()) << "mul testA testB" << std::endl;
-        console->parse("mul testA testB");
-        (console->get_stream()) << "look testA" << std::endl;
-        console->parse("look testA");
+        (console->get_stream()) << "cn 1" << std::endl;
+        console->parse("cn 1");
+        (console->get_stream()) << "cn 2" << std::endl;
+        console->parse("cn 2");
+        (console->get_stream()) << "cn 3" << std::endl;
+        console->parse("cn 3");
+        (console->get_stream()) << "cn 4" << std::endl;
+        console->parse("cn 4");
+        (console->get_stream()) << "cn 5" << std::endl;
+        console->parse("cn 5");
+        (console->get_stream()) << "cn 6" << std::endl;
+        console->parse("cn 6");
+        (console->get_stream()) << "cn 7" << std::endl;
+        console->parse("cn 7");
 
-        (console->get_stream()) << "add testA testB" << std::endl;
-        console->parse("add testA testB");
-        (console->get_stream()) << "look testA" << std::endl;
-        console->parse("look testA");
+        (console->get_stream()) << "connect 0 6 0 j" << std::endl;
+        console->parse("connect 0 6 0 j");
+        (console->get_stream()) << "connect 0 6 1 r1" << std::endl;
+        console->parse("connect 0 6 1 r1");
+        (console->get_stream()) << "connect 0 6 1 r3" << std::endl;
+        console->parse("connect 0 6 1 r3");
+        (console->get_stream()) << "connect 0 6 1 r5" << std::endl;
+        console->parse("connect 0 6 1 r5");
+        (console->get_stream()) << "connect 0 6 1 g" << std::endl;
+        console->parse("connect 0 6 1 g");
+        (console->get_stream()) << "connect 0 1 0 2" << std::endl;
+        console->parse("connect 0 1 0 2");
+        (console->get_stream()) << "connect 0 4 0 5" << std::endl;
+        console->parse("connect 0 4 0 5");
+        (console->get_stream()) << "connect 0 1 1 j" << std::endl;
+        console->parse("connect 0 1 1 j");
+        (console->get_stream()) << "connect 0 2 0 r1" << std::endl;
+        console->parse("connect 0 2 0 r1");
+        (console->get_stream()) << "connect 0 3 1 e" << std::endl;
+        console->parse("connect 0 3 1 e");
+        (console->get_stream()) << "connect 0 7 0 e" << std::endl;
+        console->parse("connect 0 7 0 e");
+        (console->get_stream()) << "connect 0 7 0 r3" << std::endl;
+        console->parse("connect 0 7 0 r3");
+        (console->get_stream()) << "connect 0 4 0 r5" << std::endl;
+        console->parse("connect 0 4 0 r5");
+        (console->get_stream()) << "connect 0 5 0 g" << std::endl;
+        console->parse("connect 0 5 0 g");
+        (console->get_stream()) << "connect 0 2 0 r2" << std::endl;
+        console->parse("connect 0 2 0 r2");
+        (console->get_stream()) << "connect 0 3 1 r2" << std::endl;
+        console->parse("connect 0 3 1 r2");
+        (console->get_stream()) << "connect 0 3 0 r4" << std::endl;
+        console->parse("connect 0 3 0 r4");
+        (console->get_stream()) << "connect 0 4 1 r4" << std::endl;
+        console->parse("connect 0 4 1 r4");
 
-        (console->get_stream()) << "delete testA" << std::endl;
-        console->parse("delete testA");
-        (console->get_stream()) << "delete testB" << std::endl;
-        console->parse("delete testB");
+    /*  console->parse("cvs e 30");
+        console->parse("cr r1 10");
+        console->parse("cr r2 10");
+        console->parse("cr r3 10");
+        console->parse("cdivs r4 200 In1.n4");
+        console->parse("cn n1");
+        console->parse("cn n2");
+        console->parse("cn n3");
+        console->parse("cn n4");
+        console->parse("connect 0 n1 0 e");
+        console->parse("connect 0 n4 1 e");
+        console->parse("connect 0 n1 0 r1");
+        console->parse("connect 0 n2 1 r1");
+        console->parse("connect 0 n2 0 r2");
+        console->parse("connect 0 n3 1 r2");
+        console->parse("connect 0 n3 0 r3");
+        console->parse("connect 0 n4 1 r3");
+        console->parse("connect 0 n3 0 r4");
+        console->parse("connect 0 n4 1 r4");
+        */
+
+        (console->get_stream()) << "solve e" << std::endl;
+        console->parse("solve e");
+
+        (console->get_stream()) << "remove e" << std::endl;
+        console->parse("remove e");
+        (console->get_stream()) << "remove j" << std::endl;
+        console->parse("remove j");
+        (console->get_stream()) << "remove r1" << std::endl;
+        console->parse("remove r1");
+        (console->get_stream()) << "remove r2" << std::endl;
+        console->parse("remove r2");
+        (console->get_stream()) << "remove r3" << std::endl;
+        console->parse("remove r3");
+        (console->get_stream()) << "remove r4" << std::endl;
+        console->parse("remove r4");
+        (console->get_stream()) << "remove r5" << std::endl;
+        console->parse("remove r5");
+        (console->get_stream()) << "remove g" << std::endl;
+        console->parse("remove g");
+
+        (console->get_stream()) << "remove 1" << std::endl;
+        console->parse("remove 1");
+        (console->get_stream()) << "remove 2" << std::endl;
+        console->parse("remove 2");
+        (console->get_stream()) << "remove 3" << std::endl;
+        console->parse("remove 3");
+        (console->get_stream()) << "remove 4" << std::endl;
+        console->parse("remove 4");
+        (console->get_stream()) << "remove 5" << std::endl;
+        console->parse("remove 5");
+        (console->get_stream()) << "remove 6" << std::endl;
+        console->parse("remove 6");
+        (console->get_stream()) << "remove 7" << std::endl;
+        console->parse("remove 7");
 
         return 0;
     }

@@ -2,7 +2,7 @@
 * Name: main.cpp
 * Purpose: Solving problems with electronics
 * @author mmodzel2
-* @version 0.98 14-05-2017
+* @version 1.00 18-05-2017
 */
 
 #include <iostream>
@@ -11,16 +11,18 @@
 
 #include "console.hpp"
 #include "electronics.hpp"
+#include "test.hpp"
 
 using namespace std;
 
-unsigned int test(Console* console, void** args);
 unsigned int help(Console* console, void** args);
 
 int main()
 {
     string str;
     Console* console = new Console(std::cout);
+
+    Test<double>::test_assert(console, nullptr);
 
     console->register_instruction(Resistor<double>::create, "create_resistance", 2, 8, 10);
     console->register_instruction(Resistor<double>::create, "cr", 2, 8, 10);
@@ -48,7 +50,7 @@ int main()
     console->register_instruction(Electronics<double>::console_remove, "remove", 1, 11);
     console->register_instruction(Current_Solutions<double>::console_solve, "solve",1,11);
 
-    console->register_instruction(test, "test",0);
+    console->register_instruction(Test<double>::test, "test",0);
     console->register_instruction(help, "help",0);
 
     cout << "Write an instruction:" << endl;
@@ -57,86 +59,6 @@ int main()
         if (str == "exit" || str == "quit") break;
         console->parse(str.c_str());
     }
-
-    return 0;
-}
-
-unsigned int test(Console* console, void** args){
-    console->parse("cvs e 4");
-    console->parse("ccs j 3");
-    console->parse("cr r1 1");
-    console->parse("cr r2 2");
-    console->parse("cr r3 3");
-    console->parse("cr r4 4");
-    console->parse("cr r5 5");
-    console->parse("cducs g 0.3 U3.2");
-
-    console->parse("cn 1");
-    console->parse("cn 2");
-    console->parse("cn 3");
-    console->parse("cn 4");
-    console->parse("cn 5");
-    console->parse("cn 6");
-    console->parse("cn 7");
-
-    console->parse("connect 0 6 0 j");
-    console->parse("connect 0 6 1 r1");
-    console->parse("connect 0 6 1 r3");
-    console->parse("connect 0 6 1 r5");
-    console->parse("connect 0 6 1 g");
-    console->parse("connect 0 1 0 2");
-    console->parse("connect 0 4 0 5");
-    console->parse("connect 0 1 1 j");
-    console->parse("connect 0 2 0 r1");
-    console->parse("connect 0 3 1 e");
-    console->parse("connect 0 7 0 e");
-    console->parse("connect 0 7 0 r3");
-    console->parse("connect 0 4 0 r5");
-    console->parse("connect 0 5 0 g");
-    console->parse("connect 0 2 0 r2");
-    console->parse("connect 0 3 1 r2");
-    console->parse("connect 0 3 0 r4");
-    console->parse("connect 0 4 1 r4");
-
-/*  console->parse("cvs e 30");
-    console->parse("cr r1 10");
-    console->parse("cr r2 10");
-    console->parse("cr r3 10");
-    console->parse("cdivs r4 200 In1.n4");
-    console->parse("cn n1");
-    console->parse("cn n2");
-    console->parse("cn n3");
-    console->parse("cn n4");
-    console->parse("connect 0 n1 0 e");
-    console->parse("connect 0 n4 1 e");
-    console->parse("connect 0 n1 0 r1");
-    console->parse("connect 0 n2 1 r1");
-    console->parse("connect 0 n2 0 r2");
-    console->parse("connect 0 n3 1 r2");
-    console->parse("connect 0 n3 0 r3");
-    console->parse("connect 0 n4 1 r3");
-    console->parse("connect 0 n3 0 r4");
-    console->parse("connect 0 n4 1 r4");
-    */
-
-    console->parse("solve e");
-
-    console->parse("remove e");
-    console->parse("remove j");
-    console->parse("remove r1");
-    console->parse("remove r2");
-    console->parse("remove r3");
-    console->parse("remove r4");
-    console->parse("remove r5");
-    console->parse("remove g");
-
-    console->parse("remove 1");
-    console->parse("remove 2");
-    console->parse("remove 3");
-    console->parse("remove 4");
-    console->parse("remove 5");
-    console->parse("remove 6");
-    console->parse("remove 7");
 
     return 0;
 }

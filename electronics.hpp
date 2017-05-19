@@ -2,7 +2,7 @@
 * Name: electronics.hpp
 * Purpose: Solving problems with electronics
 * @author mmodzel2
-* @version 0.98 14-05-2017
+* @version 1.00 18-05-2017
 */
 
 #ifndef _ELECTR_HPP
@@ -56,6 +56,8 @@ template <class type>
 
             static unsigned int console_connect(Console* console, void** args);
             static unsigned int console_disconnect(Console* console, void** args);
+
+            static unsigned int console_remove(Console* console, void** args);
     };
 
 template <class type>
@@ -399,7 +401,7 @@ template <class type>
                         e->connect_out(nullptr); //disconnect element from node
                 }
         } else {
-            if (c1[0] == 'a' || c1[0] == 'A' || c1[0] == '0')
+            if (c1[0] == 'a' || c1[0] == 'A' || c1[0] == '0'){
                e = ((Electronics<double>*)args[1])->get_connect_in();
                if (e != nullptr){
                     if (e->get_type() == 1){
@@ -412,7 +414,8 @@ template <class type>
                         ((Electronics<double>*)args[1])->connect_in(nullptr); //disconnect element
                     }
                }
-            else if (c1[0] == 'b' ||c1[0] == 'B' || c1[0] == '1')
+            }
+            else if (c1[0] == 'b' ||c1[0] == 'B' || c1[0] == '1'){
                e = ((Electronics<double>*)args[1])->get_connect_out();
                if (e != nullptr){
                     if (e->get_type() == 1){
@@ -425,9 +428,62 @@ template <class type>
                     }
                     ((Electronics<double>*)args[1])->connect_out(nullptr); //disconnect element
                }
+            }
         }
 
         (console->get_stream()) << "Element disconnected." << std::endl;
+
+        return 0;
+}
+
+template <class type>
+    unsigned int Electronics<type>::console_remove(Console* console, void** args){
+        Electronics* e = nullptr;
+
+        if (args[0] == nullptr){
+            (console->get_stream()) << "Element does not exist." << std::endl;
+            return 1;
+        }
+
+        if (((Electronics<double>*)args[0])->get_type() == 1){ //Node detected
+                for (unsigned int i = 0; i < (((Node<double>*)args[0])->get_connection_count()); i++){
+                    e = ((Node<double>*)args[0])->get(i);
+                    if (e->get_connect_in() == ((Electronics<double>*)args[0]))
+                        e->connect_in(nullptr); //disconnect element from node
+                    if (e->get_connect_out() == ((Electronics<double>*)args[0]))
+                        e->connect_out(nullptr); //disconnect element from node
+                }
+        } else {
+            e = ((Electronics<double>*)args[0])->get_connect_in();
+            if (e != nullptr){
+                if (e->get_type() == 1){
+                    ((Node<double>*)e)->remove((Electronics<double>*)args[0]);
+                } else {
+                    if (e->get_connect_in() == ((Electronics<double>*)args[0]))
+                        e->connect_in(nullptr); //disconnect element that is connected to disconnecting element
+                    if (e->get_connect_out() == ((Electronics<double>*)args[0]))
+                        e->connect_out(nullptr); //disconnect element that is connected to disconnecting element
+                    ((Electronics<double>*)args[0])->connect_in(nullptr); //disconnect element
+                }
+            }
+            e = ((Electronics<double>*)args[0])->get_connect_out();
+            if (e != nullptr){
+                if (e->get_type() == 1){
+                    ((Node<double>*)e)->remove((Electronics<double>*)args[0]);
+                } else {
+                    if (e->get_connect_in() == ((Electronics<double>*)args[0]))
+                        e->connect_in(nullptr); //disconnect element that is connected to disconnecting element
+                    if (e->get_connect_out() == ((Electronics<double>*)args[0]))
+                        e->connect_out(nullptr); //disconnect element that is connected to disconnecting element
+                }
+                ((Electronics<double>*)args[0])->connect_out(nullptr); //disconnect element
+            }
+        }
+
+        console->remove_variable((Electronics<double>*)args[0]);
+        delete ((Electronics<double>*)args[0]);
+
+        (console->get_stream()) << "Element removed." << std::endl;
 
         return 0;
 }
@@ -553,7 +609,7 @@ template <class type>
             return 1;
         }
 
-        unsigned int ret = console->register_variable((const char *)args[0], n);
+        unsigned int ret = console->register_variable((const char *)args[0], ((Electronics<type>*)n));
         if (ret == 1){
             delete n;
             (console->get_stream()) << "Lack of free memory. Node element cannot be created." << std::endl;
@@ -624,7 +680,7 @@ template <class type>
             return 1;
         }
 
-        unsigned int ret = console->register_variable((const char *)args[0], r);
+        unsigned int ret = console->register_variable((const char *)args[0], ((Electronics<type>*)r));
         if (ret == 1){
             delete r;
             (console->get_stream()) << "Lack of free memory. Resistance element cannot be created." << std::endl;
@@ -695,7 +751,7 @@ template <class type>
             return 1;
         }
 
-        unsigned int ret = console->register_variable((const char *)args[0], c);
+        unsigned int ret = console->register_variable((const char *)args[0], ((Electronics<type>*)c));
         if (ret == 1){
             delete c;
             (console->get_stream()) << "Lack of free memory. Capacitity element cannot be created." << std::endl;
@@ -766,7 +822,7 @@ template <class type>
             return 1;
         }
 
-        unsigned int ret = console->register_variable((const char *)args[0], l);
+        unsigned int ret = console->register_variable((const char *)args[0], ((Electronics<type>*)l));
         if (ret == 1){
             delete l;
             (console->get_stream()) << "Lack of free memory. Inductance element cannot be created." << std::endl;
@@ -839,7 +895,7 @@ template <class type>
             return 1;
         }
 
-        unsigned int ret = console->register_variable((const char *)args[0], j);
+        unsigned int ret = console->register_variable((const char *)args[0], ((Electronics<type>*)j));
         if (ret == 1){
             delete j;
             (console->get_stream()) << "Lack of free memory. Current supply element cannot be created." << std::endl;
@@ -916,7 +972,7 @@ template <class type>
             return 1;
         }
 
-        unsigned int ret = console->register_variable((const char *)args[0], j);
+        unsigned int ret = console->register_variable((const char *)args[0], ((Electronics<type>*)j));
         if (ret == 1){
             delete j;
             (console->get_stream()) << "Lack of free memory. Voltage supply element cannot be created." << std::endl;
@@ -994,7 +1050,7 @@ template <class type>
             return 1;
         }
 
-        unsigned int ret = console->register_variable((const char *)args[0], j);
+        unsigned int ret = console->register_variable((const char *)args[0], ((Electronics<type>*)j));
         if (ret == 1){
             delete j;
             (console->get_stream()) << "Lack of free memory. Voltage supply element cannot be created." << std::endl;
@@ -1021,7 +1077,7 @@ template <class type>
 template <class type>
     EVariable<type>* Voltage_source<type>::voltage(std::string current, bool out){
         EVariable<type>* v = new EVariable<type>;
-        if (out == 0) v->con = e_;
+        if (out == 1) v->con = e_;
         else v->con = type(-1)*e_;
         v->v = "1";
         return v;
@@ -1037,7 +1093,7 @@ template <class type>
 
 template <class type>
     type Voltage_source<type>::voltage(type current, bool out, int){
-        if (out == 0) return e_;
+        if (out == 1) return e_;
         else return type(-1)*e_;
     }
 
@@ -1067,7 +1123,7 @@ template <class type>
             return 1;
         }
 
-        unsigned int ret = console->register_variable((const char *)args[0], v);
+        unsigned int ret = console->register_variable((const char *)args[0], ((Electronics<type>*)v));
         if (ret == 1){
             delete v;
             (console->get_stream()) << "Lack of free memory. Voltage supply element cannot be created." << std::endl;
@@ -1094,7 +1150,7 @@ template <class type>
 template <class type>
     EVariable<type>* Voltage_disource<type>::voltage(std::string current, bool out){
         EVariable<type>* v = new EVariable<type>;
-        if (out == 0) v->con = l_;
+        if (out == 1) v->con = l_;
         else v->con = type(-1)*l_;
         v->v = current_;
         return v;
@@ -1144,7 +1200,7 @@ template <class type>
             return 1;
         }
 
-        unsigned int ret = console->register_variable((const char *)args[0], v);
+        unsigned int ret = console->register_variable((const char *)args[0], ((Electronics<type>*)v));
         if (ret == 1){
             delete v;
             (console->get_stream()) << "Lack of free memory. Voltage supply element cannot be created." << std::endl;
@@ -1171,7 +1227,7 @@ template <class type>
 template <class type>
     EVariable<type>* Voltage_dusource<type>::voltage(std::string current, bool out){
         EVariable<type>* v = new EVariable<type>;
-        if (out == 0) v->con = b_;
+        if (out == 1) v->con = b_;
         else v->con = type(-1)*b_;
         v->v = voltage_;
         return v;
@@ -1222,7 +1278,7 @@ template <class type>
             return 1;
         }
 
-        unsigned int ret = console->register_variable((const char *)args[0], v);
+        unsigned int ret = console->register_variable((const char *)args[0], ((Electronics<type>*)v));
         if (ret == 1){
             delete v;
             (console->get_stream()) << "Lack of free memory. Voltage supply element cannot be created." << std::endl;
@@ -1464,7 +1520,7 @@ template <class type>
             }
 
             /* For test purpose - show loops */
-            /*for (unsigned int i = 0; i < n; i++){
+            /*for (unsigned int i = 0; i < n*2; i++){
                 if (connection_loops[i*(n+1)] != nullptr){
                     for (unsigned int j = 0; j < n+1; j++){
                          if (connection_loops[i*(n+1)+j] == nullptr) break;
@@ -1477,7 +1533,7 @@ template <class type>
             /* Check connections by looking through loops if there is a connection without loop set current in this connection to zero */
             for (unsigned int i = 0; i < n*2; i++){
                 flag = 0;
-                for (unsigned int j = 0; j < n; j++){
+                for (unsigned int j = 0; j < n*2; j++){
                     if (connection_loops[j*(n+1)] != nullptr){
                         for (unsigned int m = 0; m < n; m++){
                             if (connection_loops[j*(n+1)+m] == nullptr) break;
@@ -1501,7 +1557,7 @@ template <class type>
             }
 
             /* Now get values from electronics voltage functions for each element in loops */
-            for (unsigned int m = 0; m < n; m++){
+            for (unsigned int m = 0; m < n*2; m++){
                 if (connection_loops[m*(n+1)] != nullptr){
                     I->expand(I->get_rows()+1, I->get_columns());
                     IB->expand(IB->get_rows()+1, 1);
@@ -1606,6 +1662,10 @@ template <class type>
                 }
             }
 
+            /* Make matrix with n equations to get minor faster and solve it quicker*/
+            I->expand(n,n);
+            IB->expand(n,1);
+
             /* Show matrix - for test purpose */
             /*for (unsigned int i = 0; i < I->get_rows(); i++){
                 for (unsigned int j = 0; j < I->get_columns(); j++)
@@ -1629,8 +1689,10 @@ template <class type>
                 /* Save solutions */
                 currents_ = new type[n];
                 voltages_ = new type[n];
-                for (unsigned int i = 0; i < n; i++)
+                for (unsigned int i = 0; i < n; i++){
+                    //cout << solution[i].str();
                     solution[i] >> currents_[i];
+                }
 
                 delete[] solution;
                 /* Get Voltages for solutions */
@@ -1770,18 +1832,18 @@ template <class type>
         unsigned int tempcn = 0, cn = 0;
         Node<type>* tempn = nullptr;
 
-        bool* memflag = new bool[n]; //block for setting flags that will tell if memory block is copied for specific node - it prevents from unspecific destroying loop before getting to next node in created loop
-        for (unsigned int i = 0; i < n; i++) memflag[i] = 0;
+        bool* memflag = new bool[n*2]; //block for setting flags that will tell if memory block is copied for specific node - it prevents from unspecific destroying loop before getting to next node in created loop
+        for (unsigned int i = 0; i < n*2; i++) memflag[i] = 0;
 
         memflag[k] = 1; //block is to recurse
 
         if (loops == nullptr){
             flag2 = 1;
-            loops = new Node<type>* [n*(n+1)]; //allocate memory for saving connections loops
+            loops = new Node<type>* [2*n*(n+1)]; //allocate memory for saving connections loops
             /* Build of structure above
                 square n*(n+1) in which every loop starts from k*n - where k is number of loop in structure
                 every loop has n+1 elements - each element in loop is pointer to node in the loop */
-            for (unsigned int j = 1; j < n*(n+1); j++)
+            for (unsigned int j = 1; j < 2*n*(n+1); j++)
                 loops[j] = nullptr; //we do not have elements in loops - clear it
 
             //set first element in first loop - first node
@@ -1802,12 +1864,14 @@ template <class type>
         for(unsigned int j = 0; j < n*2; j+=2){
             if (connections_list[j] == loops[k*(n+1)+l]){
                 if (flag == 0){ //add node to existing loop
-                    if (loops[k*(n+1)+2] == nullptr && loops[k*(n+1)] == connections_list[j+1]) continue; //skip reverse direction from check below
+                    if (l >= 1)
+                        if (loops[k*(n+1)+l-1] == connections_list[j+1]) continue; //skip reverse direction that cuts itself
                     flag = 1;
                     loops[k*(n+1)+l+1] = connections_list[j+1];
                 } else if (flag == 1) {
-                    if (loops[k*(n+1)+2] == nullptr && loops[k*(n+1)] == connections_list[j+1]) continue; //skip reverse direction from check below
-                    for (unsigned int i = 0; i < n; i++)
+                    if (l >= 1)
+                        if (loops[k*(n+1)+l-1] == connections_list[j+1]) continue; //skip reverse direction that cuts itself
+                    for (unsigned int i = 0; i < n*2; i++)
                         if (loops[i*(n+1)] == nullptr){
                             memflag[i] = 1; //set block
 
@@ -1819,25 +1883,29 @@ template <class type>
                         }
                 }
             }
-            if (flag2 == 1){ //check reverse direction only for first node in loop
-                if (connections_list[j+1] == loops[k*(n+1)+l]){
-                    if (flag == 0){ //add node to existing loop
-                        flag = 1;
-                        loops[k*(n+1)+l+1] = connections_list[j];
-                    } else if (flag == 1) {
-                        for (unsigned int i = 0; i < n; i++)
-                            if (loops[i*(n+1)] == nullptr){
-                                memflag[i] = 1; //set block
 
-                                for (unsigned int m = 0; m <= l; m++)
-                                    loops[(i*(n+1))+m] = loops[(k*(n+1))+m]; //copy previous nodes in loop
+            if (connections_list[j+1] == loops[k*(n+1)+l]){
+                if (flag == 0){ //add node to existing loop
+                    if (l >= 1)
+                        if (loops[k*(n+1)+l-1] == connections_list[j]) continue; //skip reverse direction that cuts itself
+                    flag = 1;
+                    loops[k*(n+1)+l+1] = connections_list[j];
+                } else if (flag == 1) {
+                    if (l >= 1)
+                        if (loops[k*(n+1)+l-1] == connections_list[j]) continue; //skip reverse direction that cuts itself
+                    for (unsigned int i = 0; i < n*2; i++)
+                        if (loops[i*(n+1)] == nullptr){
+                            memflag[i] = 1; //set block
 
-                                loops[i*(n+1)+l+1] = connections_list[j]; //add node to created loop
-                                break;
-                            }
-                    }
+                            for (unsigned int m = 0; m <= l; m++)
+                                loops[(i*(n+1))+m] = loops[(k*(n+1))+m]; //copy previous nodes in loop
+
+                            loops[i*(n+1)+l+1] = connections_list[j]; //add node to created loop
+                            break;
+                        }
                 }
             }
+
         }
 
         if (flag == 0){ //there is probably connection with the same nodes making closing loop
@@ -1855,26 +1923,8 @@ template <class type>
             }
         }
 
-           /* if (connections_list[j+1] == loops[k*n+l]){
-                if (flag == 0){ //add node to existing loop
-                    flag = 1;
-                    loops[k*n+l+1] = connections_list[j];
-                } else {
-                    for (unsigned int i = 0; i < n; i++)
-                        if (loops[i*n] == nullptr){
-                            memflag[i] = 1; //set block
-
-                            for (unsigned int m = 0; m <= l; m++)
-                                loops[(i*n)+m] = loops[(k*n)+m]; //copy previous nodes in loop
-
-                            loops[i*n+l+1] = connections_list[j]; //add node to created loop
-                            break;
-                        }
-                }
-            }*/
-
         //make recursion to existing loop and created new loops
-        for(unsigned int j = 0; j < n; j++){
+        for(unsigned int j = 0; j < n*2; j++){
             if (memflag[j] == 1){
                 flag1 = 1;
                 if (loops[j*(n+1)] != loops[j*(n+1)+l+1]){ //loop is not closed
@@ -1904,7 +1954,7 @@ template <class type>
             for(int j = 0; j < (int)n*2; j+=2){
                 flag = 0;
 
-                for (unsigned int i = 0; i < n; i++){
+                for (unsigned int i = 0; i < n*2; i++){
                     if (loops[i*(n+1)] != nullptr){
                         for (unsigned int p = 0; p < n; p++)
                             if (connections_list[j] == loops[i*(n+1)+p]){ //node is in loop - end looking in this element
@@ -1915,7 +1965,7 @@ template <class type>
                     }
                 }
                 if (flag == 0){ /* Found node that does not have loop */
-                    for (unsigned int i = 0; i < n; i++)
+                    for (unsigned int i = 0; i < n*2; i++)
                         if (loops[i*(n+1)] == nullptr){
                             loops[i*(n+1)] = connections_list[j]; /* Create new loop */
                             get_loops(connections_list, n, loops, i, 0);
@@ -1927,27 +1977,41 @@ template <class type>
                 }
             }
 
-            /* Delete repeating loops - if there is doubling connection on the list, loop with this connection might be doubled */
-            for (unsigned int i = 0; i < n; i++){
-                if (loops[i*(n+1)] != nullptr)
-                    for (unsigned int j = i+1; j < n; j++){
+            /* Delete repeating permutation loops - if there is doubling connection on the list, loop with this connection might be doubled */
+            for (unsigned int i = 0; i < n*2; i++){
+                if (loops[i*(n+1)] != nullptr){
+                    unsigned int t = 0;
+                    for (; t < n; t++) if (loops[i*(n+1)+t] == nullptr) break;
+
+                    for (unsigned int j = i+1; j < n*2; j++){
                         if (loops[j*(n+1)] != nullptr){
-                            flag = 0;
-                            for (unsigned int p = 0; p < n; p++)
-                                if (loops[i*(n+1)+p] != loops[j*(n+1)+p]){
-                                    flag = 1;
-                                    break;
-                                }
-                            if (flag == 0) for (unsigned int p = 0; p < n; p++) loops[j*(n+1)+p] = nullptr;
+                            unsigned int p = 0;
+                            for (; p < n; p++) if (loops[j*(n+1)+p] == nullptr) break;
+
+                            if (p != t) continue; //loops are not equal
+                            /* Now check permutation of loops */
+
+                            for (p = 0; p < t; p++){
+                                flag = 0;
+                                for (unsigned int u = 0; u < t; u++)
+                                    if (loops[i*(n+1)+p] == loops[j*(n+1)+u]){
+                                        flag = 1;
+                                        break;
+                                    }
+                                if (flag == 0) break;
+                            }
+
+                            if (flag == 1) for (p = 0; p < n+1; p++) loops[j*(n+1)+p] = nullptr;
                         }
                     }
+                }
             }
 
             /* Check if connection doubles - add loops */
             for (unsigned int i = 0; i < n*2; i+=2){
                 for (unsigned int j = i+2; j < n*2; j+=2){
                     if ((connections_list[i] == connections_list[j]) && (connections_list[i+1] == connections_list[j+1])){
-                        for (unsigned int p = 0; p < n; p++){ //add doubled connection
+                        for (unsigned int p = 0; p < n*2; p++){ //add doubled connection
                             if (loops[p*(n+1)] == nullptr){
                                 loops[p*(n+1)] = connections_list[i];
                                 loops[p*(n+1)+1] = connections_list[i+1];
@@ -1960,18 +2024,31 @@ template <class type>
                 }
             }
 
-            /* Delete repeating loops once more - after finding connection doubling loops there can be repeating loops on the list */
-            for (unsigned int i = 0; i < n; i++){
+            /* Delete repeating permutation loops once more - after finding connection doubling loops there can be repeating loops on the list */
+            for (unsigned int i = 0; i < n*2; i++){
                 if (loops[i*(n+1)] != nullptr){
-                    for (unsigned int j = i+1; j < n; j++){
+                    unsigned int t = 0;
+                    for (; t < n; t++) if (loops[i*(n+1)+t] == nullptr) break;
+
+                    for (unsigned int j = i+1; j < n*2; j++){
                         if (loops[j*(n+1)] != nullptr){
-                            flag = 0;
-                            for (unsigned int p = 0; p < n; p++)
-                                if (loops[i*(n+1)+p] != loops[j*(n+1)+p]){
-                                    flag = 1;
-                                    break;
-                                }
-                            if (flag == 0) for (unsigned int p = 0; p < n+1; p++) loops[j*(n+1)+p] = nullptr;
+                            unsigned int p = 0;
+                            for (; p < n; p++) if (loops[j*(n+1)+p] == nullptr) break;
+
+                            if (p != t) continue; //loops are not equal
+                            /* Now check permutation of loops */
+
+                            for (p = 0; p < t; p++){
+                                flag = 0;
+                                for (unsigned int u = 0; u < t; u++)
+                                    if (loops[i*(n+1)+p] == loops[j*(n+1)+u]){
+                                        flag = 1;
+                                        break;
+                                    }
+                                if (flag == 0) break;
+                            }
+
+                            if (flag == 1) for (p = 0; p < n+1; p++) loops[j*(n+1)+p] = nullptr;
                         }
                     }
                     //check if loop is too short - that means loop has not been created
@@ -2014,11 +2091,11 @@ template <class type>
             } else if (var->v == "1"){ //voltage independent source detected
                     //Independent voltage source detected.
                     //add equation to matrix
-                    IB->set(mrow,0,(IB->get(mrow,0)+(var->con*type(-dir))));
+                    IB->set(mrow,0,(IB->get(mrow,0)+(var->con*type(dir))));
             } else if (var->v[0] == 'I'){ //voltage depends from current
                     //check if this is the same current as in connection
                     if  (var->v == isstr.str()){
-                        I->set(mrow,i,(I->get(mrow,i)+(var->con*type(dir))));
+                        I->set(mrow,i,(I->get(mrow,i)+(var->con*type(-dir))));
                     } else {
                         //we have to find connection in which current var1->v goes
                         for (unsigned int m = 0; m < n; m++){
@@ -2026,7 +2103,7 @@ template <class type>
                             idsstr << "I" << connections_list[m*2]->get_node() << "." << connections_list[(m*2)+1]->get_node();
 
                             if (idsstr.str() == var->v){
-                                I->set(mrow,m,I->get(mrow,m)+var->con*type(dir));
+                                I->set(mrow,m,I->get(mrow,m)+var->con*type(-dir));
                                 break;
                             }
 
@@ -2034,7 +2111,7 @@ template <class type>
                             idsstr.str("");
                             idsstr << "I" << connections_list[(m*2)+1]->get_node() << "." << connections_list[m*2]->get_node();
                             if (idsstr.str() == var->v){
-                                I->set(mrow,m,I->get(mrow,m)+var->con*type(-dir));
+                                I->set(mrow,m,I->get(mrow,m)+var->con*type(dir));
                                 break;
                             }
                         }
@@ -2111,7 +2188,7 @@ template <class type>
                     I->expand(I->get_rows()+1, I->get_columns());
                     IB->expand(IB->get_rows()+1, 1);
                     I->set(I->get_rows()-1,i,type(1));
-                    IB->set(IB->get_rows()-1,0,var1->con);
+                    IB->set(IB->get_rows()-1,0,type(-1)*var1->con);
                 } else if (var1->v[0] == 'I'){ //current depends from another current
                     //we have to find connection in which current var1->v goes
                     unsigned int m;
@@ -2154,7 +2231,7 @@ template <class type>
                             I->expand(I->get_rows()+1, I->get_columns());
                             IB->expand(IB->get_rows()+1, 1);
                             I->set(I->get_rows()-1,i,type(1));
-                            get_connection_voltage(connections_list, interconnections_list, m, n, I, IB, I->get_rows()-1, var1->con); //get information about voltage
+                            get_connection_voltage(connections_list, interconnections_list, m, n, I, IB, I->get_rows()-1, type(-1)*var1->con); //get information about voltage
                             break;
                         }
 
@@ -2166,7 +2243,7 @@ template <class type>
                             I->expand(I->get_rows()+1, I->get_columns());
                             IB->expand(IB->get_rows()+1, 1);
                             I->set(I->get_rows()-1,i,type(1));
-                            get_connection_voltage(connections_list, interconnections_list, m, n, I, IB, I->get_rows()-1, type(-1)*var1->con); //get information about voltage
+                            get_connection_voltage(connections_list, interconnections_list, m, n, I, IB, I->get_rows()-1, var1->con); //get information about voltage
                             break;
                         }
                     }

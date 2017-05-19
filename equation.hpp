@@ -2,7 +2,7 @@
 * Name: equation.cpp
 * Purpose: Matrix and solving equations
 * @author mmodzel2
-* @version 1.2 14-05-2017
+* @version 1.2 18-05-2017
 */
 
 #ifndef _EQUATION_HPP
